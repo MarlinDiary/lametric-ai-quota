@@ -60,7 +60,8 @@ frame sequence.
 ## Railway deployment
 
 1. Create a Railway service from this repository.
-2. Attach a persistent volume at `/data`.
+2. Attach a Railway persistent volume at `/data` (the Dockerfile deliberately
+   omits `VOLUME`, which Railway's builder does not accept).
 3. Generate a secret with `python3 scripts/generate_token.py` and save it as
    `LAMETRIC_TOKEN` in Railway Variables.
 4. Generate a Railway domain for the service.

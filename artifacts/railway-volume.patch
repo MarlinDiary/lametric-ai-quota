@@ -1,0 +1,26 @@
+diff --git a/Dockerfile b/Dockerfile
+index caca561..7871593 100644
+--- a/Dockerfile
++++ b/Dockerfile
+@@ -57,7 +57,6 @@ RUN chmod +x /usr/local/bin/docker-entrypoint.sh \
+     && codex --version \
+     && claude --version
+ 
+-VOLUME ["/data"]
+ EXPOSE 8080
+ ENTRYPOINT ["docker-entrypoint.sh"]
+ CMD ["python3", "-m", "lametric_quota"]
+diff --git a/README.md b/README.md
+index d9d5f09..b795cdd 100644
+--- a/README.md
++++ b/README.md
+@@ -60,7 +60,8 @@ frame sequence.
+ ## Railway deployment
+ 
+ 1. Create a Railway service from this repository.
+-2. Attach a persistent volume at `/data`.
++2. Attach a Railway persistent volume at `/data` (the Dockerfile deliberately
++   omits `VOLUME`, which Railway's builder does not accept).
+ 3. Generate a secret with `python3 scripts/generate_token.py` and save it as
+    `LAMETRIC_TOKEN` in Railway Variables.
+ 4. Generate a Railway domain for the service.

@@ -1,0 +1,43 @@
+BASELINE_RED
+============
+$ PYTHONPATH=src python3 -m unittest tests.test_deployment_config -v
+test_dockerfile_leaves_data_volume_to_railway (tests.test_deployment_config.DeploymentConfigTests) ... FAIL
+
+======================================================================
+FAIL: test_dockerfile_leaves_data_volume_to_railway (tests.test_deployment_config.DeploymentConfigTests)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/marlin/Documents/Codex/2026-08-09/new-chat-2/work/lametric-ai-quota/tests/test_deployment_config.py", line 18, in test_dockerfile_leaves_data_volume_to_railway
+    self.assertNotIn("VOLUME", instructions)
+AssertionError: 'VOLUME' unexpectedly found in ['FROM', 'ARG', 'ARG', 'ARG', 'ARG', 'RUN', '&&', 'CA-CERTIFICATES', 'CURL', 'LIBCURL4', 'LIBSQLITE3-0', 'LIBXML2', 'LIBZ3-4', 'PYTHON3', '&&', 'RUN', 'CASE', 'AMD64)', 'ARM64)', '*)', 'ESAC;', 'ARCHIVE="CODEXBARCLI-V${CODEXBAR_VERSION}-LINUX-MUSL-${CB_ARCH}.TAR.GZ";', 'CURL', '"HTTPS://GITHUB.COM/STEIPETE/CODEXBAR/RELEASES/DOWNLOAD/V${CODEXBAR_VERSION}/${ARCHIVE}";', 'ECHO', 'MKDIR', 'TAR', 'LN', 'RM', 'RUN', '"@OPENAI/CODEX@${CODEX_VERSION}"', '"@ANTHROPIC-AI/CLAUDE-CODE@${CLAUDE_CODE_VERSION}"', '&&', 'WORKDIR', 'COPY', 'COPY', 'COPY', 'ENV', 'HOME=/DATA/HOME', 'CODEX_HOME=/DATA/HOME/.CODEX', 'CLAUDE_CONFIG_DIR=/DATA/HOME/.CLAUDE', 'CODEXBAR_CONFIG=/DATA/HOME/.CONFIG/CODEXBAR/CONFIG.JSON', 'PORT=8080', 'REFRESH_INTERVAL=300', 'CODEXBAR_CODEX_SOURCE=OAUTH', 'CODEXBAR_CLAUDE_SOURCE=OAUTH', 'RUN', '&&', '&&', '&&', '&&', 'VOLUME', 'EXPOSE', 'ENTRYPOINT', 'CMD']
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (failures=1)
+EXIT_STATUS=1
+
+MODIFIED_GREEN
+==============
+$ ./scripts/verify.sh
+test_retains_last_good_provider_during_partial_failure (test_cache.CacheTests) ... ok
+test_accepts_single_provider_object (test_codexbar.CodexBarParsingTests) ... ok
+test_extracts_weekly_remaining_and_reset_from_array (test_codexbar.CodexBarParsingTests) ... ok
+test_rejects_missing_weekly_window (test_codexbar.CodexBarParsingTests) ... ok
+test_dockerfile_leaves_data_volume_to_railway (test_deployment_config.DeploymentConfigTests) ... ok
+test_countdown_switches_to_hours_and_minutes (test_frames.FrameTests) ... ok
+test_exact_four_frame_two_icon_contract (test_frames.FrameTests) ... ok
+test_exactly_two_icons_are_exact_8_by_8_pngs (test_icons.IconTests) ... ok
+test_icons_use_only_the_requested_opaque_color (test_icons.IconTests) ... ok
+test_health_is_public_and_redacted (test_server.ServerTests) ... ok
+test_secret_path_returns_four_frames_without_logging_token (test_server.ServerTests) ... ok
+test_wrong_path_is_hidden_as_404 (test_server.ServerTests) ... ok
+
+----------------------------------------------------------------------
+Ran 12 tests in 1.544s
+
+OK
+{"event": "http", "client": "127.0.0.1", "method": "GET", "status": 200, "size": "-"}
+{"event": "http", "client": "127.0.0.1", "method": "GET", "status": 404, "size": "-"}
+{"health": "ok", "texts": ["63%", "2d11h", "41%", "4d11h"], "frames": 4}
+EXIT_STATUS=0

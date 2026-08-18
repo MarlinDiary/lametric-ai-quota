@@ -57,7 +57,6 @@ RUN chmod +x /usr/local/bin/docker-entrypoint.sh \
     && codex --version \
     && claude --version
 
-VOLUME ["/data"]
 EXPOSE 8080
 ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["python3", "-m", "lametric_quota"]

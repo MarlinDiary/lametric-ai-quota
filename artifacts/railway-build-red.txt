@@ -1,0 +1,6 @@
+scheduling build on Metal builder "builder-uezrtx"
+scheduling build on Metal builder "builder-uezrtx"
+fetched snapshot sha256:c5c0422690258135ff300e4ba156de21b96804a886fb0d1553ea4330141e9763 (115 kB bytes)
+fetching snapshot
+unpacking archive
+dockerfile invalid: docker VOLUME at Line 60 is not supported, use Railway Volumes
