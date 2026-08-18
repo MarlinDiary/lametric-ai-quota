@@ -1,0 +1,35 @@
+$ python3 scripts/generate_icons.py && PYTHONPATH=src python3 -m unittest tests.test_frames tests.test_icons
+.FF
+======================================================================
+FAIL: test_exact_four_frame_two_icon_contract (tests.test_frames.FrameTests)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/marlin/Documents/Codex/2026-08-09/new-chat-2/work/lametric-ai-quota/tests/test_frames.py", line 28, in test_exact_four_frame_two_icon_contract
+    self.assertEqual(
+AssertionError: {'fra[95 chars]codex-reset', 'text': '2d11h'}, {'icon': 'data[103 chars]h'}]} != {'fra[95 chars]codex', 'text': '2d11h'}, {'icon': 'data:image[91 chars]h'}]}
+  {'frames': [{'icon': 'data:image/png;base64,codex', 'text': '63%'},
+-             {'icon': 'data:image/png;base64,codex-reset', 'text': '2d11h'},
+?                                                  ------
+
++             {'icon': 'data:image/png;base64,codex', 'text': '2d11h'},
+              {'icon': 'data:image/png;base64,claude', 'text': '41%'},
+-             {'icon': 'data:image/png;base64,claude-reset', 'text': '4d11h'}]}
+?                                                   ------
+
++             {'icon': 'data:image/png;base64,claude', 'text': '4d11h'}]}
+
+======================================================================
+FAIL: test_exactly_two_icons_are_exact_8_by_8_pngs (tests.test_icons.IconTests)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/marlin/Documents/Codex/2026-08-09/new-chat-2/work/lametric-ai-quota/tests/test_icons.py", line 15, in test_exactly_two_icons_are_exact_8_by_8_pngs
+    self.assertEqual(
+AssertionError: Items in the first set but not the second:
+'codex-reset.png'
+'claude-reset.png'
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.001s
+
+FAILED (failures=2)
+EXIT_STATUS=1

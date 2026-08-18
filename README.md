@@ -20,13 +20,13 @@ the weekly reset. There are no `W` or `R` prefixes.
 
 <p>
   <img src="assets/codex.png" width="64" height="64" alt="Codex 8x8 pixel icon">
-  <img src="assets/codex-reset.png" width="64" height="64" alt="Codex reset 8x8 pixel icon">
   <img src="assets/claude.png" width="64" height="64" alt="Claude 8x8 pixel icon">
-  <img src="assets/claude-reset.png" width="64" height="64" alt="Claude reset 8x8 pixel icon">
 </p>
 
-Every source icon is an exact 8×8 PNG. `scripts/generate_icons.py` recreates
-them deterministically.
+There are exactly two source icons, both exact 8×8 PNGs. The white terminal
+icon is reused for both Codex frames. The `C` uses Claude's `#D97757` accent
+and is reused for both Claude Code frames. `scripts/generate_icons.py`
+recreates them deterministically.
 
 ## Data flow
 

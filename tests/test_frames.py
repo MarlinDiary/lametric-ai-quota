@@ -13,7 +13,7 @@ FIXTURE = Path(__file__).parents[1] / "fixtures" / "codexbar-usage.json"
 
 
 class FrameTests(unittest.TestCase):
-    def test_exact_four_frame_contract(self) -> None:
+    def test_exact_four_frame_two_icon_contract(self) -> None:
         raw = json.loads(FIXTURE.read_text())
         quotas = {
             provider: parse_provider_quota(raw, provider)
@@ -30,9 +30,9 @@ class FrameTests(unittest.TestCase):
             {
                 "frames": [
                     {"icon": "data:image/png;base64,codex", "text": "63%"},
-                    {"icon": "data:image/png;base64,codex-reset", "text": "2d11h"},
+                    {"icon": "data:image/png;base64,codex", "text": "2d11h"},
                     {"icon": "data:image/png;base64,claude", "text": "41%"},
-                    {"icon": "data:image/png;base64,claude-reset", "text": "4d11h"},
+                    {"icon": "data:image/png;base64,claude", "text": "4d11h"},
                 ]
             },
         )

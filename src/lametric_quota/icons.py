@@ -6,7 +6,7 @@ from pathlib import Path
 
 
 ASSET_DIR = Path(__file__).resolve().parents[2] / "assets"
-ICON_NAMES = frozenset({"codex", "codex-reset", "claude", "claude-reset"})
+ICON_NAMES = frozenset({"codex", "claude"})
 
 
 @lru_cache(maxsize=len(ICON_NAMES))

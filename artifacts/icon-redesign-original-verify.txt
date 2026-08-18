@@ -1,0 +1,5 @@
+artifacts/icon-redesign-original-e9ff4b8.bundle is okay
+The bundle contains this ref:
+e9ff4b870b421933494845fa33fa3b4594891ecc HEAD
+The bundle records a complete history.
+The bundle uses this hash algorithm: sha1

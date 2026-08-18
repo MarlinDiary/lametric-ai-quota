@@ -51,7 +51,7 @@ def build_lametric_payload(
                     "text": f"{_rounded_percent(quota.remaining_percent)}%",
                 },
                 {
-                    "icon": icon_loader(f"{provider}-reset"),
+                    "icon": icon_loader(provider),
                     "text": format_countdown(quota.reset_at, reference),
                 },
             ]

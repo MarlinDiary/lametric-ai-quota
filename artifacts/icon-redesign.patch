@@ -1,0 +1,292 @@
+diff --git a/README.md b/README.md
+index 5862d1a..d9d5f09 100644
+--- a/README.md
++++ b/README.md
+@@ -20,13 +20,13 @@ the weekly reset. There are no `W` or `R` prefixes.
+ 
+ <p>
+   <img src="assets/codex.png" width="64" height="64" alt="Codex 8x8 pixel icon">
+-  <img src="assets/codex-reset.png" width="64" height="64" alt="Codex reset 8x8 pixel icon">
+   <img src="assets/claude.png" width="64" height="64" alt="Claude 8x8 pixel icon">
+-  <img src="assets/claude-reset.png" width="64" height="64" alt="Claude reset 8x8 pixel icon">
+ </p>
+ 
+-Every source icon is an exact 8×8 PNG. `scripts/generate_icons.py` recreates
+-them deterministically.
++There are exactly two source icons, both exact 8×8 PNGs. The white terminal
++icon is reused for both Codex frames. The `C` uses Claude's `#D97757` accent
++and is reused for both Claude Code frames. `scripts/generate_icons.py`
++recreates them deterministically.
+ 
+ ## Data flow
+ 
+diff --git a/artifacts/icon-preview.png b/artifacts/icon-preview.png
+index ab7ec046526f2c16d3368f5d051546ae9aeb02b4..fa93c9c03334c1aea075bb28faeee251dc745991 100644
+GIT binary patch
+literal 542
+zcmeAS@N?(olHy`uVBq!ia0y~yU^D=-7jQ5ENtTY~!9anho-U3d6}R5r-N@S%AkucR
+zd*cBX;W;ga5^a?dZH6<B96EH3H7D-SVeWas*-0MzVrJW$<X&f=aQLV)gCkQD3pUKc
+z*~GGM=d`+qf2*pp>`Qjr2mPH_D)s->PyWx3oSOEpX;5&S(4fHR*o1)_Pwa2+X@38G
+z)5&f6Yxm}_*{fcnh^h|N%9ai7JvF}_s!v;d{Vf#h;Q%xiWHdJ1=&_?+=dSrJ|3^+p
+zW`LZEiWB)I@9}f$sc;Ahs3>?~#{%CbY`nj3V@dwZx8EPbj6*dBW^5vVW!1N?+fmCm
+zzW982PelgAV36U+7-mtxs?6PXMtkEYT3ng8xrD#6Wb5}idMZCob8!f<aAIPRAsxQo
+lCNyxvy@9ESh4alD=A(;MR;_;6TMmqO22WQ%mvv4FO#q9Vrtts(
+
+literal 1796
+zcmeAS@N?(olHy`uVBq!ia0y~yV3Gi`8#vg2q^F*MI0FOQX-^l&kcwMxuWj^Yb`)_9
+zJbpsxq}uJK*$a5Q6c=l2DJm`IVDC6mvSFG;@4Wwig#SoH*gl(g`SRy7?|Y}eyTA0V
+z-+%G;_rD+B9JcFww`s2T{p+{0zpSda|GlAqu{CE$14COaLmL5-gCpSvdjesyy_SOr
+z18=l95H<>8T{}*<nXtNjW#3cXkj8x2?%F-~UySeNCVV-+o&Prj4<jQF0dfQX0Re#n
+zM397y0$L|Xlu<zIehUcTGcZC>;;#IKcZ|EfJKSimJ;USil_7-x!eXEYv)(fsu&@}s
+zAxOG7FdVjHa3)N?adseV;9)x!;tj;*w#C{8m-s(?eO~@z)&IZ!d_2D+s^#y>e|VQJ
+z|Lz6UrH2{Yn4z)8F2M)&sZ4?eFp?nQg)Rz;x`Kv>5bZ#(K-8j$GQbVpz|U9+Q;QH~
+z;6XO@MmsJC9Eix5e?NcwHFX6(gMaml-}`@M<~hIsLhKR^j8Md9z`zVeG6@W9Fa-1!
+zL@7?yEJqj#sb+cvHyh}B9IC&;Tmtkc%q3veA*^mz3@;m&>i_-w&Q{>=cSETcU-qRj
+zKi)KV@papTm+$lCiyJ5YtAqOlJ3~<cyExodFoTH+5hD21C(7fKg_())5=;cUu8YPS
+z?$-amd0@rAT6bpKU;MkQ3@$aU<!b>J2K`$bu{jCoPPpOt+zfXoUhg9t1!rS-D$pZ9
+zqu|Ek_7}v3ruwoAOa#K%-K;j;%`bDf6fP_AGP+iNapPNXd?Cd&JjyW`$jK3&cCa##
+x6DvH`qB9D>9^=I6J+PO+xdGE+w~N1-Ph?HpWIpR|DX?~9@O1TaS?83{1OU|;_jv#S
+
+diff --git a/assets/claude-reset.png b/assets/claude-reset.png
+deleted file mode 100644
+index e562422b6b6583647fb80528fa18217c60077d1e..0000000000000000000000000000000000000000
+GIT binary patch
+literal 0
+HcmV?d00001
+
+literal 120
+zcmeAS@N?(olHy`uVBq!ia0vp^93afW1|*O0@9PFq_MR?|Ar-fhF9<#S$$!}V^x=aN
+zkv)uRjq4cPj2FCiGjC;#Ws*(S`0?qnIM=ZaOe!40&Dsv-Dn5c;oCb^~JPaYzXZ&%}
+SyrTj%iow&>&t;ucLK6UrO(RYK
+
+diff --git a/assets/claude.png b/assets/claude.png
+index 819ba4ce0733ea3dab679550424217d02bb29b5c..9b9d4999abe72d7a99a604ff18589bce3051cad3 100644
+GIT binary patch
+delta 58
+zcmd0ZoS<T=;OXKRQgJIep`mH^(}({r8Zz%vVb*I1pVY_I5!Uj~mqCtIf2~oyh&%%j
+Nc)I$ztaD0e0sx{U6zc#0
+
+delta 73
+zcma#dn4sdK@9E+gQgJK!g3!aC{D;j?A3i7%*~6&TxQ@Zic)@Eo^H#=KCRyPyhYMVb
+dWIIpKW|;iHIaE1{Wjg~9c)I$ztaD0e0su1E8*cyr
+
+diff --git a/assets/codex-reset.png b/assets/codex-reset.png
+deleted file mode 100644
+index 276e9babb74741b8e0e41725463639b88c6b992a..0000000000000000000000000000000000000000
+GIT binary patch
+literal 0
+HcmV?d00001
+
+literal 127
+zcmeAS@N?(olHy`uVBq!ia0vp^93afW1|*O0@9PFqZk{fVAr-fhA3PHO$$#h@|F%Ph
+zK0Gaw6I3tWOkllHqS$Sy@cPfE$KqX{5u#UO|MfQ+-eC}GiDV6LSi_;hVZ`ao=))k(
+a%wW2I;<6b#bKe0?WbkzLb6Mw<&;$TZ>nTS7
+
+diff --git a/assets/codex.png b/assets/codex.png
+index 60de21effbe62733dc8907cf2cfc237c41149fbb..c686612d36c5e1622a19bc5eb875a547034a3e67 100644
+GIT binary patch
+delta 62
+zcmXSkouFc=;_2cTQgJK!hd+Zs1E&mwE2CMfgxUgarMoOM6uQ(F$#n8FFep!MuDueO
+R@RR`vJYD@<);T3K0RV2G6T1Ka
+
+delta 85
+zcmazonV=G2?djqeQgJK!!6WgX{D;2rZ#!h@!_y);LG|Lz1lAiRirt0^um5~{EZ*gL
+pMDswJ{w4`#v+BS*4Zh-=G8vw&X<}6{Ia|d51fH&bF6*2UngCCkBXa-%
+
+diff --git a/scripts/generate_icons.py b/scripts/generate_icons.py
+index 01c33aa..8e920ed 100755
+--- a/scripts/generate_icons.py
++++ b/scripts/generate_icons.py
+@@ -11,54 +11,31 @@ ROOT = Path(__file__).parents[1]
+ ASSETS = ROOT / "assets"
+ 
+ PALETTE = {
+-    "B": (10, 15, 20, 255),
+-    "T": (63, 224, 181, 255),
+-    "W": (244, 248, 250, 255),
+-    "D": (42, 20, 12, 255),
++    ".": (0, 0, 0, 0),
++    "W": (255, 255, 255, 255),
+     "O": (217, 119, 87, 255),
+-    "C": (126, 211, 255, 255),
+ }
+ 
+ PATTERNS = {
+     "codex": [
+-        "BBTTTBBB",
+-        "BTTBTTBB",
+-        "TTBBBTTB",
+-        "TBTWTBTB",
+-        "TBTWTBTB",
+-        "BTTBBBTT",
+-        "BBTTBTTB",
+-        "BBBTTTBB",
+-    ],
+-    "codex-reset": [
+-        "BBTTTBBB",
+-        "BTTBTTBB",
+-        "TTBBBTTB",
+-        "TBTWTBTB",
+-        "TBTWCCCC",
+-        "BTTBCBBC",
+-        "BBTTCWBC",
+-        "BBBCCCCC",
++        "WWWWWWWW",
++        "W......W",
++        "W.W....W",
++        "W..W...W",
++        "W.W....W",
++        "W...WW.W",
++        "W......W",
++        "WWWWWWWW",
+     ],
+     "claude": [
+-        "DDDOODDD",
+-        "DODOODOD",
+-        "DDOOOODD",
+-        "OOOOOOOO",
+-        "OOOOOOOO",
+-        "DDOOOODD",
+-        "DODOODOD",
+-        "DDDOODDD",
+-    ],
+-    "claude-reset": [
+-        "DDDOODDD",
+-        "DODOODOD",
+-        "DDOOOODD",
+-        "OOOOOOOO",
+-        "OOOOWWWW",
+-        "DDOOWDDW",
+-        "DODOOWDW",
+-        "DDDWWWWW",
++        "..OOOOO.",
++        ".OO.....",
++        ".O......",
++        ".O......",
++        ".O......",
++        ".O......",
++        ".OO.....",
++        "..OOOOO.",
+     ],
+ }
+ 
+@@ -83,6 +60,8 @@ def png(pattern: list[str]) -> bytes:
+ 
+ def main() -> None:
+     ASSETS.mkdir(exist_ok=True)
++    for stale_name in ("codex-reset", "claude-reset"):
++        (ASSETS / f"{stale_name}.png").unlink(missing_ok=True)
+     for name, pattern in PATTERNS.items():
+         (ASSETS / f"{name}.png").write_bytes(png(pattern))
+ 
+diff --git a/src/lametric_quota/frames.py b/src/lametric_quota/frames.py
+index 225eb58..11136b6 100644
+--- a/src/lametric_quota/frames.py
++++ b/src/lametric_quota/frames.py
+@@ -51,7 +51,7 @@ def build_lametric_payload(
+                     "text": f"{_rounded_percent(quota.remaining_percent)}%",
+                 },
+                 {
+-                    "icon": icon_loader(f"{provider}-reset"),
++                    "icon": icon_loader(provider),
+                     "text": format_countdown(quota.reset_at, reference),
+                 },
+             ]
+diff --git a/src/lametric_quota/icons.py b/src/lametric_quota/icons.py
+index c66bd35..a1a257a 100644
+--- a/src/lametric_quota/icons.py
++++ b/src/lametric_quota/icons.py
+@@ -6,7 +6,7 @@ from pathlib import Path
+ 
+ 
+ ASSET_DIR = Path(__file__).resolve().parents[2] / "assets"
+-ICON_NAMES = frozenset({"codex", "codex-reset", "claude", "claude-reset"})
++ICON_NAMES = frozenset({"codex", "claude"})
+ 
+ 
+ @lru_cache(maxsize=len(ICON_NAMES))
+diff --git a/tests/test_frames.py b/tests/test_frames.py
+index ee2ebd5..dfe40f5 100644
+--- a/tests/test_frames.py
++++ b/tests/test_frames.py
+@@ -13,7 +13,7 @@ FIXTURE = Path(__file__).parents[1] / "fixtures" / "codexbar-usage.json"
+ 
+ 
+ class FrameTests(unittest.TestCase):
+-    def test_exact_four_frame_contract(self) -> None:
++    def test_exact_four_frame_two_icon_contract(self) -> None:
+         raw = json.loads(FIXTURE.read_text())
+         quotas = {
+             provider: parse_provider_quota(raw, provider)
+@@ -30,9 +30,9 @@ class FrameTests(unittest.TestCase):
+             {
+                 "frames": [
+                     {"icon": "data:image/png;base64,codex", "text": "63%"},
+-                    {"icon": "data:image/png;base64,codex-reset", "text": "2d11h"},
++                    {"icon": "data:image/png;base64,codex", "text": "2d11h"},
+                     {"icon": "data:image/png;base64,claude", "text": "41%"},
+-                    {"icon": "data:image/png;base64,claude-reset", "text": "4d11h"},
++                    {"icon": "data:image/png;base64,claude", "text": "4d11h"},
+                 ]
+             },
+         )
+diff --git a/tests/test_icons.py b/tests/test_icons.py
+index fd21ade..1bd58e2 100644
+--- a/tests/test_icons.py
++++ b/tests/test_icons.py
+@@ -2,6 +2,7 @@ from __future__ import annotations
+ 
+ import struct
+ import unittest
++import zlib
+ from pathlib import Path
+ 
+ from lametric_quota.icons import icon_data_uri
+@@ -11,14 +12,45 @@ ASSETS = Path(__file__).parents[1] / "assets"
+ 
+ 
+ class IconTests(unittest.TestCase):
+-    def test_every_icon_is_an_exact_8_by_8_png(self) -> None:
+-        for name in ("codex", "codex-reset", "claude", "claude-reset"):
++    def test_exactly_two_icons_are_exact_8_by_8_pngs(self) -> None:
++        self.assertEqual(
++            {path.name for path in ASSETS.glob("*.png")},
++            {"codex.png", "claude.png"},
++        )
++        for name in ("codex", "claude"):
+             data = (ASSETS / f"{name}.png").read_bytes()
+             self.assertEqual(data[:8], b"\x89PNG\r\n\x1a\n")
+             width, height = struct.unpack(">II", data[16:24])
+             self.assertEqual((width, height), (8, 8))
+             self.assertTrue(icon_data_uri(name).startswith("data:image/png;base64,"))
+ 
++    def test_icons_use_only_the_requested_opaque_color(self) -> None:
++        expected = {
++            "codex": {(255, 255, 255, 255)},
++            "claude": {(217, 119, 87, 255)},
++        }
++        for name, expected_colors in expected.items():
++            data = (ASSETS / f"{name}.png").read_bytes()
++            offset = 8
++            idat = bytearray()
++            while offset < len(data):
++                length = struct.unpack(">I", data[offset : offset + 4])[0]
++                kind = data[offset + 4 : offset + 8]
++                payload = data[offset + 8 : offset + 8 + length]
++                if kind == b"IDAT":
++                    idat.extend(payload)
++                offset += 12 + length
++            raw = zlib.decompress(bytes(idat))
++            pixels = []
++            for row in range(8):
++                scanline = raw[row * 33 : (row + 1) * 33]
++                self.assertEqual(scanline[0], 0)
++                pixels.extend(
++                    tuple(scanline[index : index + 4])
++                    for index in range(1, 33, 4)
++                )
++            self.assertEqual({pixel for pixel in pixels if pixel[3]}, expected_colors)
++
+ 
+ if __name__ == "__main__":
+     unittest.main()

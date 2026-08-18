@@ -11,54 +11,31 @@ ROOT = Path(__file__).parents[1]
 ASSETS = ROOT / "assets"
 
 PALETTE = {
-    "B": (10, 15, 20, 255),
-    "T": (63, 224, 181, 255),
-    "W": (244, 248, 250, 255),
-    "D": (42, 20, 12, 255),
+    ".": (0, 0, 0, 0),
+    "W": (255, 255, 255, 255),
     "O": (217, 119, 87, 255),
-    "C": (126, 211, 255, 255),
 }
 
 PATTERNS = {
     "codex": [
-        "BBTTTBBB",
-        "BTTBTTBB",
-        "TTBBBTTB",
-        "TBTWTBTB",
-        "TBTWTBTB",
-        "BTTBBBTT",
-        "BBTTBTTB",
-        "BBBTTTBB",
-    ],
-    "codex-reset": [
-        "BBTTTBBB",
-        "BTTBTTBB",
-        "TTBBBTTB",
-        "TBTWTBTB",
-        "TBTWCCCC",
-        "BTTBCBBC",
-        "BBTTCWBC",
-        "BBBCCCCC",
+        "WWWWWWWW",
+        "W......W",
+        "W.W....W",
+        "W..W...W",
+        "W.W....W",
+        "W...WW.W",
+        "W......W",
+        "WWWWWWWW",
     ],
     "claude": [
-        "DDDOODDD",
-        "DODOODOD",
-        "DDOOOODD",
-        "OOOOOOOO",
-        "OOOOOOOO",
-        "DDOOOODD",
-        "DODOODOD",
-        "DDDOODDD",
-    ],
-    "claude-reset": [
-        "DDDOODDD",
-        "DODOODOD",
-        "DDOOOODD",
-        "OOOOOOOO",
-        "OOOOWWWW",
-        "DDOOWDDW",
-        "DODOOWDW",
-        "DDDWWWWW",
+        "..OOOOO.",
+        ".OO.....",
+        ".O......",
+        ".O......",
+        ".O......",
+        ".O......",
+        ".OO.....",
+        "..OOOOO.",
     ],
 }
 
@@ -83,6 +60,8 @@ def png(pattern: list[str]) -> bytes:
 
 def main() -> None:
     ASSETS.mkdir(exist_ok=True)
+    for stale_name in ("codex-reset", "claude-reset"):
+        (ASSETS / f"{stale_name}.png").unlink(missing_ok=True)
     for name, pattern in PATTERNS.items():
         (ASSETS / f"{name}.png").write_bytes(png(pattern))
 
