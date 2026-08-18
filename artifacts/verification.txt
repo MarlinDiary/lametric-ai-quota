@@ -1,0 +1,157 @@
+LAMETRIC AI QUOTA VERIFICATION RECORD
+Generated: 2026-08-18 Pacific/Auckland
+
+BASELINE
+Command: PYTHONPATH=src python3 -m unittest discover -s tests -v
+Input: tests before implementation
+Literal result: FAILED (errors=3); ModuleNotFoundError for lametric_quota.codexbar and lametric_quota.icons
+Exit status: 1
+Full output: artifacts/baseline-red.txt
+
+MODIFIED LOCAL VERIFICATION
+Command: ./scripts/verify.sh
+Input: fixtures/codexbar-usage.json and tests/fixture_codexbar.py
+test_retains_last_good_provider_during_partial_failure (test_cache.CacheTests) ... ok
+test_accepts_single_provider_object (test_codexbar.CodexBarParsingTests) ... ok
+test_extracts_weekly_remaining_and_reset_from_array (test_codexbar.CodexBarParsingTests) ... ok
+test_rejects_missing_weekly_window (test_codexbar.CodexBarParsingTests) ... ok
+test_countdown_switches_to_hours_and_minutes (test_frames.FrameTests) ... ok
+test_exact_four_frame_contract (test_frames.FrameTests) ... ok
+test_every_icon_is_an_exact_8_by_8_png (test_icons.IconTests) ... ok
+test_health_is_public_and_redacted (test_server.ServerTests) ... ok
+test_secret_path_returns_four_frames_without_logging_token (test_server.ServerTests) ... ok
+test_wrong_path_is_hidden_as_404 (test_server.ServerTests) ... ok
+
+----------------------------------------------------------------------
+Ran 10 tests in 1.549s
+
+OK
+{"event": "http", "client": "127.0.0.1", "method": "GET", "status": 200, "size": "-"}
+{"event": "http", "client": "127.0.0.1", "method": "GET", "status": 404, "size": "-"}
+{"health": "ok", "texts": ["63%", "2d11h", "41%", "4d11h"], "frames": 4}
+EXIT_STATUS=0
+
+CONTAINER BUILD
+Command: docker build --progress=plain -t lametric-ai-quota:local .
+Input: Dockerfile; TARGETARCH=arm64; pinned upstream checksums
+IMAGE_ID=sha256:9df52dc8ded06d6f6f041d938c379fab21200adce3398cb776d1f1146f5cc4ce
+
+#6 [7/9] COPY assets /app/assets
+#6 CACHED
+
+#7 [2/9] RUN apt-get update     && apt-get install -y --no-install-recommends         ca-certificates         curl         libcurl4         libsqlite3-0         libxml2         libz3-4         python3     && rm -rf /var/lib/apt/lists/*
+#7 CACHED
+
+#8 [6/9] COPY src /app/src
+#8 CACHED
+
+#9 [3/9] RUN set -eux;     case "arm64" in       amd64) CB_ARCH=x86_64; CB_SHA=cae0cac1f178e57ddd2f7deeba0cba0605f084205f2d8b421fcdbe4aa7144376 ;;       arm64) CB_ARCH=aarch64; CB_SHA=302c3b5b7286c040c4f11f9a011a9f36e3172f12aa83f2c86a3caf40c6a3625a ;;       *) echo "unsupported TARGETARCH: arm64" >&2; exit 64 ;;     esac;     archive="CodexBarCLI-v0.52.0-linux-musl-${CB_ARCH}.tar.gz";     curl -fL --retry 3 -o "/tmp/${archive}"       "https://github.com/steipete/CodexBar/releases/download/v0.52.0/${archive}";     echo "${CB_SHA}  /tmp/${archive}" | sha256sum -c -;     mkdir -p /opt/codexbar;     tar -xzf "/tmp/${archive}" -C /opt/codexbar;     ln -s /opt/codexbar/codexbar /usr/local/bin/codexbar;     rm "/tmp/${archive}"
+#9 CACHED
+
+#10 [4/9] RUN npm install -g --include=optional       "@openai/codex@0.147.0"       "@anthropic-ai/claude-code@2.1.234"     && npm cache clean --force
+#10 CACHED
+
+#11 [5/9] WORKDIR /app
+#11 CACHED
+
+#12 [8/9] COPY scripts/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+#12 CACHED
+
+#13 [9/9] RUN chmod +x /usr/local/bin/docker-entrypoint.sh     && python3 -m compileall -q /app/src     && codexbar --version     && codex --version     && claude --version
+#13 CACHED
+
+#14 exporting to image
+#14 exporting layers done
+#14 writing image sha256:9df52dc8ded06d6f6f041d938c379fab21200adce3398cb776d1f1146f5cc4ce done
+#14 naming to docker.io/library/lametric-ai-quota:local done
+#14 DONE 0.0s
+EXIT_STATUS=0
+
+CONTAINER RUNTIME
+Command: ./scripts/verify_container.sh
+Input: built image plus fixture mounts; no provider credentials
+-- versions --
+CodexBar 0.52.0
+codex-cli 0.147.0
+2.1.234 (Claude Code)
+-- health --
+{"status":"ok","ready":true}
+-- frames --
+{"texts":["63%","2d11h","41%","4d11h"],"icons_are_png":[true,true,true,true]}
+-- token absent from logs --
+TOKEN_NOT_LOGGED
+EXIT_STATUS=0
+
+PATCH REPLAY
+COMMAND: git init -b main && git am < artifacts/initial.patch && ./scripts/verify.sh
+INPUT: artifacts/initial.patch
+Initialized empty Git repository in /private/tmp/lametric-patch-replay.RfsQt4/.git/
+applying to an empty history
+Applying: feat: add Railway-backed LaMetric quota adapter
+test_retains_last_good_provider_during_partial_failure (test_cache.CacheTests) ... ok
+test_accepts_single_provider_object (test_codexbar.CodexBarParsingTests) ... ok
+test_extracts_weekly_remaining_and_reset_from_array (test_codexbar.CodexBarParsingTests) ... ok
+test_rejects_missing_weekly_window (test_codexbar.CodexBarParsingTests) ... ok
+test_countdown_switches_to_hours_and_minutes (test_frames.FrameTests) ... ok
+test_exact_four_frame_contract (test_frames.FrameTests) ... ok
+test_every_icon_is_an_exact_8_by_8_png (test_icons.IconTests) ... ok
+test_health_is_public_and_redacted (test_server.ServerTests) ... ok
+test_secret_path_returns_four_frames_without_logging_token (test_server.ServerTests) ... ok
+test_wrong_path_is_hidden_as_404 (test_server.ServerTests) ... ok
+
+----------------------------------------------------------------------
+Ran 10 tests in 1.546s
+
+OK
+{"event": "http", "client": "127.0.0.1", "method": "GET", "status": 200, "size": "-"}
+{"event": "http", "client": "127.0.0.1", "method": "GET", "status": 404, "size": "-"}
+{"health": "ok", "texts": ["63%", "2d11h", "41%", "4d11h"], "frames": 4}
+EXIT_STATUS=0
+
+ROLLBACK
+COMMAND: ./scripts/rollback.sh 9f86165
+INPUT: clean clone at feature commit
+[main ba8780e] Revert "feat: add Railway-backed LaMetric quota adapter"
+ Date: Tue Aug 18 13:24:17 2026 +1200
+ 36 files changed, 1269 deletions(-)
+ delete mode 100644 .dockerignore
+ delete mode 100644 .env.example
+ delete mode 100644 .github/workflows/ci.yml
+ delete mode 100644 .gitignore
+ delete mode 100644 Dockerfile
+ delete mode 100644 LICENSE
+ delete mode 100644 Makefile
+ delete mode 100644 README.md
+ delete mode 100644 SECURITY.md
+ delete mode 100644 artifacts/baseline-red.txt
+ delete mode 100644 artifacts/icon-preview.png
+ delete mode 100644 assets/claude-reset.png
+ delete mode 100644 assets/claude.png
+ delete mode 100644 assets/codex-reset.png
+ delete mode 100644 assets/codex.png
+ delete mode 100644 fixtures/codexbar-usage.json
+ delete mode 100644 railway.toml
+ delete mode 100755 scripts/docker-entrypoint.sh
+ delete mode 100755 scripts/generate_icons.py
+ delete mode 100755 scripts/generate_token.py
+ delete mode 100755 scripts/rollback.sh
+ delete mode 100755 scripts/verify.sh
+ delete mode 100755 scripts/verify_container.sh
+ delete mode 100644 src/lametric_quota/__init__.py
+ delete mode 100644 src/lametric_quota/__main__.py
+ delete mode 100644 src/lametric_quota/cache.py
+ delete mode 100644 src/lametric_quota/codexbar.py
+ delete mode 100644 src/lametric_quota/frames.py
+ delete mode 100644 src/lametric_quota/icons.py
+ delete mode 100644 src/lametric_quota/server.py
+ delete mode 100755 tests/fixture_codexbar.py
+ delete mode 100644 tests/test_cache.py
+ delete mode 100644 tests/test_codexbar.py
+ delete mode 100644 tests/test_frames.py
+ delete mode 100644 tests/test_icons.py
+ delete mode 100644 tests/test_server.py
+Rollback commit created locally. Review it, run ./scripts/verify.sh, then push it to trigger Railway.
+## main...origin/main [ahead 1]
+ba8780e Revert "feat: add Railway-backed LaMetric quota adapter"
+9f86165 feat: add Railway-backed LaMetric quota adapter
+EXIT_STATUS=0

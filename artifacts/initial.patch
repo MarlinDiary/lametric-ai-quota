@@ -1,0 +1,1605 @@
+From 9f86165860a07b17705c6a7ace603bf3a7bb85b9 Mon Sep 17 00:00:00 2001
+From: Leo <cni586@aucklanduni.ac.nz>
+Date: Tue, 18 Aug 2026 13:23:50 +1200
+Subject: [PATCH] feat: add Railway-backed LaMetric quota adapter
+
+---
+ .dockerignore                  |  11 +++
+ .env.example                   |   4 +
+ .github/workflows/ci.yml       |  29 +++++++
+ .gitignore                     |   9 ++
+ Dockerfile                     |  63 ++++++++++++++
+ LICENSE                        |  21 +++++
+ Makefile                       |  16 ++++
+ README.md                      | 121 +++++++++++++++++++++++++++
+ SECURITY.md                    |   9 ++
+ artifacts/baseline-red.txt     |  55 +++++++++++++
+ artifacts/icon-preview.png     | Bin 0 -> 1796 bytes
+ assets/claude-reset.png        | Bin 0 -> 120 bytes
+ assets/claude.png              | Bin 0 -> 104 bytes
+ assets/codex-reset.png         | Bin 0 -> 127 bytes
+ assets/codex.png               | Bin 0 -> 116 bytes
+ fixtures/codexbar-usage.json   |  36 ++++++++
+ railway.toml                   |   9 ++
+ scripts/docker-entrypoint.sh   |  11 +++
+ scripts/generate_icons.py      |  91 ++++++++++++++++++++
+ scripts/generate_token.py      |   5 ++
+ scripts/rollback.sh            |  16 ++++
+ scripts/verify.sh              |  56 +++++++++++++
+ scripts/verify_container.sh    |  54 ++++++++++++
+ src/lametric_quota/__init__.py |   3 +
+ src/lametric_quota/__main__.py |   4 +
+ src/lametric_quota/cache.py    | 101 +++++++++++++++++++++++
+ src/lametric_quota/codexbar.py | 146 +++++++++++++++++++++++++++++++++
+ src/lametric_quota/frames.py   |  59 +++++++++++++
+ src/lametric_quota/icons.py    |  17 ++++
+ src/lametric_quota/server.py   |  91 ++++++++++++++++++++
+ tests/fixture_codexbar.py      |  18 ++++
+ tests/test_cache.py            |  39 +++++++++
+ tests/test_codexbar.py         |  37 +++++++++
+ tests/test_frames.py           |  53 ++++++++++++
+ tests/test_icons.py            |  24 ++++++
+ tests/test_server.py           |  61 ++++++++++++++
+ 36 files changed, 1269 insertions(+)
+ create mode 100644 .dockerignore
+ create mode 100644 .env.example
+ create mode 100644 .github/workflows/ci.yml
+ create mode 100644 .gitignore
+ create mode 100644 Dockerfile
+ create mode 100644 LICENSE
+ create mode 100644 Makefile
+ create mode 100644 README.md
+ create mode 100644 SECURITY.md
+ create mode 100644 artifacts/baseline-red.txt
+ create mode 100644 artifacts/icon-preview.png
+ create mode 100644 assets/claude-reset.png
+ create mode 100644 assets/claude.png
+ create mode 100644 assets/codex-reset.png
+ create mode 100644 assets/codex.png
+ create mode 100644 fixtures/codexbar-usage.json
+ create mode 100644 railway.toml
+ create mode 100755 scripts/docker-entrypoint.sh
+ create mode 100755 scripts/generate_icons.py
+ create mode 100755 scripts/generate_token.py
+ create mode 100755 scripts/rollback.sh
+ create mode 100755 scripts/verify.sh
+ create mode 100755 scripts/verify_container.sh
+ create mode 100644 src/lametric_quota/__init__.py
+ create mode 100644 src/lametric_quota/__main__.py
+ create mode 100644 src/lametric_quota/cache.py
+ create mode 100644 src/lametric_quota/codexbar.py
+ create mode 100644 src/lametric_quota/frames.py
+ create mode 100644 src/lametric_quota/icons.py
+ create mode 100644 src/lametric_quota/server.py
+ create mode 100755 tests/fixture_codexbar.py
+ create mode 100644 tests/test_cache.py
+ create mode 100644 tests/test_codexbar.py
+ create mode 100644 tests/test_frames.py
+ create mode 100644 tests/test_icons.py
+ create mode 100644 tests/test_server.py
+
+diff --git a/.dockerignore b/.dockerignore
+new file mode 100644
+index 0000000..57ff759
+--- /dev/null
++++ b/.dockerignore
+@@ -0,0 +1,11 @@
++.git
++.github
++.env
++.codex
++.claude
++.codexbar
++__pycache__
++*.pyc
++artifacts
++fixtures
++tests
+diff --git a/.env.example b/.env.example
+new file mode 100644
+index 0000000..e80d4a0
+--- /dev/null
++++ b/.env.example
+@@ -0,0 +1,4 @@
++LAMETRIC_TOKEN=replace-with-at-least-24-random-characters
++REFRESH_INTERVAL=300
++CODEXBAR_CODEX_SOURCE=oauth
++CODEXBAR_CLAUDE_SOURCE=oauth
+diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
+new file mode 100644
+index 0000000..92559e3
+--- /dev/null
++++ b/.github/workflows/ci.yml
+@@ -0,0 +1,29 @@
++name: CI
++
++on:
++  push:
++  pull_request:
++
++permissions:
++  contents: read
++
++jobs:
++  test:
++    runs-on: ubuntu-latest
++    steps:
++      - uses: actions/checkout@v4
++      - uses: actions/setup-python@v5
++        with:
++          python-version: "3.12"
++      - run: ./scripts/verify.sh
++
++  docker:
++    runs-on: ubuntu-latest
++    steps:
++      - uses: actions/checkout@v4
++      - uses: docker/setup-buildx-action@v3
++      - uses: docker/build-push-action@v6
++        with:
++          context: .
++          push: false
++          tags: lametric-ai-quota:ci
+diff --git a/.gitignore b/.gitignore
+new file mode 100644
+index 0000000..b519921
+--- /dev/null
++++ b/.gitignore
+@@ -0,0 +1,9 @@
++.DS_Store
++.env
++.codex/
++.claude/
++.codexbar/
++__pycache__/
++*.py[cod]
++.pytest_cache/
++.coverage
+diff --git a/Dockerfile b/Dockerfile
+new file mode 100644
+index 0000000..caca561
+--- /dev/null
++++ b/Dockerfile
+@@ -0,0 +1,63 @@
++FROM node:22-bookworm-slim
++
++ARG TARGETARCH
++ARG CODEXBAR_VERSION=0.52.0
++ARG CODEX_VERSION=0.147.0
++ARG CLAUDE_CODE_VERSION=2.1.234
++
++RUN apt-get update \
++    && apt-get install -y --no-install-recommends \
++        ca-certificates \
++        curl \
++        libcurl4 \
++        libsqlite3-0 \
++        libxml2 \
++        libz3-4 \
++        python3 \
++    && rm -rf /var/lib/apt/lists/*
++
++RUN set -eux; \
++    case "$TARGETARCH" in \
++      amd64) CB_ARCH=x86_64; CB_SHA=cae0cac1f178e57ddd2f7deeba0cba0605f084205f2d8b421fcdbe4aa7144376 ;; \
++      arm64) CB_ARCH=aarch64; CB_SHA=302c3b5b7286c040c4f11f9a011a9f36e3172f12aa83f2c86a3caf40c6a3625a ;; \
++      *) echo "unsupported TARGETARCH: $TARGETARCH" >&2; exit 64 ;; \
++    esac; \
++    archive="CodexBarCLI-v${CODEXBAR_VERSION}-linux-musl-${CB_ARCH}.tar.gz"; \
++    curl -fL --retry 3 -o "/tmp/${archive}" \
++      "https://github.com/steipete/CodexBar/releases/download/v${CODEXBAR_VERSION}/${archive}"; \
++    echo "${CB_SHA}  /tmp/${archive}" | sha256sum -c -; \
++    mkdir -p /opt/codexbar; \
++    tar -xzf "/tmp/${archive}" -C /opt/codexbar; \
++    ln -s /opt/codexbar/codexbar /usr/local/bin/codexbar; \
++    rm "/tmp/${archive}"
++
++RUN npm install -g --include=optional \
++      "@openai/codex@${CODEX_VERSION}" \
++      "@anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}" \
++    && npm cache clean --force
++
++WORKDIR /app
++COPY src /app/src
++COPY assets /app/assets
++COPY scripts/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
++
++ENV PYTHONPATH=/app/src \
++    HOME=/data/home \
++    CODEX_HOME=/data/home/.codex \
++    CLAUDE_CONFIG_DIR=/data/home/.claude \
++    CODEXBAR_CONFIG=/data/home/.config/codexbar/config.json \
++    PORT=8080 \
++    REFRESH_INTERVAL=300 \
++    CODEXBAR_CODEX_SOURCE=oauth \
++    CODEXBAR_CLAUDE_SOURCE=oauth
++
++RUN chmod +x /usr/local/bin/docker-entrypoint.sh \
++    && python3 -m compileall -q /app/src \
++    && codexbar --version \
++    && codex --version \
++    && claude --version
++
++VOLUME ["/data"]
++EXPOSE 8080
++ENTRYPOINT ["docker-entrypoint.sh"]
++CMD ["python3", "-m", "lametric_quota"]
+diff --git a/LICENSE b/LICENSE
+new file mode 100644
+index 0000000..0e07ca2
+--- /dev/null
++++ b/LICENSE
+@@ -0,0 +1,21 @@
++MIT License
++
++Copyright (c) 2026 MarlinDiary
++
++Permission is hereby granted, free of charge, to any person obtaining a copy
++of this software and associated documentation files (the "Software"), to deal
++in the Software without restriction, including without limitation the rights
++to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
++copies of the Software, and to permit persons to whom the Software is
++furnished to do so, subject to the following conditions:
++
++The above copyright notice and this permission notice shall be included in all
++copies or substantial portions of the Software.
++
++THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
++AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
++LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
++OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
++SOFTWARE.
+diff --git a/Makefile b/Makefile
+new file mode 100644
+index 0000000..38bedd2
+--- /dev/null
++++ b/Makefile
+@@ -0,0 +1,16 @@
++.PHONY: icons test verify docker-build container-verify
++
++icons:
++	python3 scripts/generate_icons.py
++
++test: icons
++	PYTHONPATH=src python3 -m unittest discover -s tests -v
++
++verify:
++	./scripts/verify.sh
++
++docker-build:
++	docker build -t lametric-ai-quota:local .
++
++container-verify: docker-build
++	./scripts/verify_container.sh
+diff --git a/README.md b/README.md
+new file mode 100644
+index 0000000..5862d1a
+--- /dev/null
++++ b/README.md
+@@ -0,0 +1,121 @@
++# LaMetric AI Quota
++
++An intentionally small Railway adapter that reuses
++[CodexBar](https://github.com/steipete/CodexBar) to show Codex and Claude Code
++weekly quota on LaMetric TIME.
++
++The device rotates exactly four frames:
++
++```text
++[Codex]  63%
++[Codex]  2d11h
++[Claude] 41%
++[Claude] 4d07h
++```
++
++The percentage is weekly quota **remaining**. The second frame is time until
++the weekly reset. There are no `W` or `R` prefixes.
++
++## Pixel icons
++
++<p>
++  <img src="assets/codex.png" width="64" height="64" alt="Codex 8x8 pixel icon">
++  <img src="assets/codex-reset.png" width="64" height="64" alt="Codex reset 8x8 pixel icon">
++  <img src="assets/claude.png" width="64" height="64" alt="Claude 8x8 pixel icon">
++  <img src="assets/claude-reset.png" width="64" height="64" alt="Claude reset 8x8 pixel icon">
++</p>
++
++Every source icon is an exact 8×8 PNG. `scripts/generate_icons.py` recreates
++them deterministically.
++
++## Data flow
++
++```text
++Codex + Claude OAuth
++        |
++        v
++CodexBar 0.52.0
++        |
++        v
++This adapter (5 minute cache)
++        |
++        v
++Railway HTTPS -> LaMetric TIME
++```
++
++The repository does not reimplement provider APIs. It invokes the pinned
++CodexBar CLI, extracts `usage.secondary`, and maps `usedPercent` plus
++`resetsAt` to the four LaMetric frames.
++
++## Local verification
++
++```bash
++./scripts/verify.sh
++```
++
++This regenerates the icons, compiles the Python package, runs the test suite,
++starts the real HTTP server against a CodexBar fixture, and checks the literal
++frame sequence.
++
++## Railway deployment
++
++1. Create a Railway service from this repository.
++2. Attach a persistent volume at `/data`.
++3. Generate a secret with `python3 scripts/generate_token.py` and save it as
++   `LAMETRIC_TOKEN` in Railway Variables.
++4. Generate a Railway domain for the service.
++5. Open a Railway SSH session and establish the two subscription sessions:
++
++```bash
++codex login --device-auth
++claude auth login --claudeai
++codexbar usage --provider codex --source oauth --format json --json-only
++codexbar usage --provider claude --source oauth --format json --json-only
++```
++
++The container includes pinned Codex and Claude Code CLIs so they own their
++credential refresh lifecycle. Their files persist under `/data/home`.
++
++Configure the LaMetric Poll Indicator or My Data DIY app with:
++
++```text
++https://YOUR_RAILWAY_DOMAIN/v1/lametric/YOUR_LAMETRIC_TOKEN
++```
++
++The recommended polling interval is five minutes.
++
++## Endpoints
++
++- `GET /health` — public, credential-free readiness with redacted errors.
++- `GET /v1/lametric/<token>` — the four LaMetric frames.
++
++Unknown paths return `404`. The secret path is omitted from service logs.
++
++## Pinned upstream components
++
++| Component | Version |
++|---|---:|
++| CodexBar CLI | 0.52.0 |
++| OpenAI Codex CLI | 0.147.0 |
++| Anthropic Claude Code | 2.1.234 |
++| Node.js | 22 |
++
++CodexBar release archives are verified with their published SHA-256 values in
++the Docker build.
++
++## Rollback
++
++To create a local rollback commit for a deployed change:
++
++```bash
++./scripts/rollback.sh COMMIT_TO_REVERT
++./scripts/verify.sh
++git push
++```
++
++Railway will deploy the verified rollback commit through the same GitHub
++integration.
++
++## License
++
++MIT. CodexBar remains a separate MIT-licensed upstream dependency.
+diff --git a/SECURITY.md b/SECURITY.md
+new file mode 100644
+index 0000000..b9f3f10
+--- /dev/null
++++ b/SECURITY.md
+@@ -0,0 +1,9 @@
++# Security
++
++This repository contains no provider credentials.
++
++- Keep `LAMETRIC_TOKEN` in Railway Variables.
++- Mount the Railway volume at `/data`; Codex and Claude credentials live below `/data/home`.
++- Never commit `.env`, `.codex`, `.claude`, `.codexbar`, browser cookies, or command output containing tokens.
++- The public LaMetric endpoint exposes only four display frames. `/health` redacts provider diagnostics.
++- Rotate `LAMETRIC_TOKEN` after accidental disclosure and update the polling URL on the device.
+diff --git a/artifacts/baseline-red.txt b/artifacts/baseline-red.txt
+new file mode 100644
+index 0000000..0a7f3fd
+--- /dev/null
++++ b/artifacts/baseline-red.txt
+@@ -0,0 +1,55 @@
++COMMAND: PYTHONPATH=src python3 -m unittest discover -s tests -v
++INPUT: tests before implementation
++
++test_codexbar (unittest.loader._FailedTest) ... ERROR
++test_frames (unittest.loader._FailedTest) ... ERROR
++test_icons (unittest.loader._FailedTest) ... ERROR
++
++======================================================================
++ERROR: test_codexbar (unittest.loader._FailedTest)
++----------------------------------------------------------------------
++ImportError: Failed to import test module: test_codexbar
++Traceback (most recent call last):
++  File "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/unittest/loader.py", line 436, in _find_test_path
++    module = self._get_module_from_name(name)
++  File "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/unittest/loader.py", line 377, in _get_module_from_name
++    __import__(name)
++  File "<REPO>/tests/test_codexbar.py", line 7, in <module>
++    from lametric_quota.codexbar import parse_provider_quota
++ModuleNotFoundError: No module named 'lametric_quota.codexbar'
++
++
++======================================================================
++ERROR: test_frames (unittest.loader._FailedTest)
++----------------------------------------------------------------------
++ImportError: Failed to import test module: test_frames
++Traceback (most recent call last):
++  File "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/unittest/loader.py", line 436, in _find_test_path
++    module = self._get_module_from_name(name)
++  File "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/unittest/loader.py", line 377, in _get_module_from_name
++    __import__(name)
++  File "<REPO>/tests/test_frames.py", line 8, in <module>
++    from lametric_quota.codexbar import parse_provider_quota
++ModuleNotFoundError: No module named 'lametric_quota.codexbar'
++
++
++======================================================================
++ERROR: test_icons (unittest.loader._FailedTest)
++----------------------------------------------------------------------
++ImportError: Failed to import test module: test_icons
++Traceback (most recent call last):
++  File "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/unittest/loader.py", line 436, in _find_test_path
++    module = self._get_module_from_name(name)
++  File "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/unittest/loader.py", line 377, in _get_module_from_name
++    __import__(name)
++  File "<REPO>/tests/test_icons.py", line 7, in <module>
++    from lametric_quota.icons import icon_data_uri
++ModuleNotFoundError: No module named 'lametric_quota.icons'
++
++
++----------------------------------------------------------------------
++Ran 3 tests in 0.000s
++
++FAILED (errors=3)
++
++EXIT_STATUS=1
+diff --git a/artifacts/icon-preview.png b/artifacts/icon-preview.png
+new file mode 100644
+index 0000000000000000000000000000000000000000..ab7ec046526f2c16d3368f5d051546ae9aeb02b4
+GIT binary patch
+literal 1796
+zcmeAS@N?(olHy`uVBq!ia0y~yV3Gi`8#vg2q^F*MI0FOQX-^l&kcwMxuWj^Yb`)_9
+zJbpsxq}uJK*$a5Q6c=l2DJm`IVDC6mvSFG;@4Wwig#SoH*gl(g`SRy7?|Y}eyTA0V
+z-+%G;_rD+B9JcFww`s2T{p+{0zpSda|GlAqu{CE$14COaLmL5-gCpSvdjesyy_SOr
+z18=l95H<>8T{}*<nXtNjW#3cXkj8x2?%F-~UySeNCVV-+o&Prj4<jQF0dfQX0Re#n
+zM397y0$L|Xlu<zIehUcTGcZC>;;#IKcZ|EfJKSimJ;USil_7-x!eXEYv)(fsu&@}s
+zAxOG7FdVjHa3)N?adseV;9)x!;tj;*w#C{8m-s(?eO~@z)&IZ!d_2D+s^#y>e|VQJ
+z|Lz6UrH2{Yn4z)8F2M)&sZ4?eFp?nQg)Rz;x`Kv>5bZ#(K-8j$GQbVpz|U9+Q;QH~
+z;6XO@MmsJC9Eix5e?NcwHFX6(gMaml-}`@M<~hIsLhKR^j8Md9z`zVeG6@W9Fa-1!
+zL@7?yEJqj#sb+cvHyh}B9IC&;Tmtkc%q3veA*^mz3@;m&>i_-w&Q{>=cSETcU-qRj
+zKi)KV@papTm+$lCiyJ5YtAqOlJ3~<cyExodFoTH+5hD21C(7fKg_())5=;cUu8YPS
+z?$-amd0@rAT6bpKU;MkQ3@$aU<!b>J2K`$bu{jCoPPpOt+zfXoUhg9t1!rS-D$pZ9
+zqu|Ek_7}v3ruwoAOa#K%-K;j;%`bDf6fP_AGP+iNapPNXd?Cd&JjyW`$jK3&cCa##
+x6DvH`qB9D>9^=I6J+PO+xdGE+w~N1-Ph?HpWIpR|DX?~9@O1TaS?83{1OU|;_jv#S
+
+literal 0
+HcmV?d00001
+
+diff --git a/assets/claude-reset.png b/assets/claude-reset.png
+new file mode 100644
+index 0000000000000000000000000000000000000000..e562422b6b6583647fb80528fa18217c60077d1e
+GIT binary patch
+literal 120
+zcmeAS@N?(olHy`uVBq!ia0vp^93afW1|*O0@9PFq_MR?|Ar-fhF9<#S$$!}V^x=aN
+zkv)uRjq4cPj2FCiGjC;#Ws*(S`0?qnIM=ZaOe!40&Dsv-Dn5c;oCb^~JPaYzXZ&%}
+SyrTj%iow&>&t;ucLK6UrO(RYK
+
+literal 0
+HcmV?d00001
+
+diff --git a/assets/claude.png b/assets/claude.png
+new file mode 100644
+index 0000000000000000000000000000000000000000..819ba4ce0733ea3dab679550424217d02bb29b5c
+GIT binary patch
+literal 104
+zcmeAS@N?(olHy`uVBq!ia0vp^93afW1|*O0@9PFq`kpS1Ar-fhF9<#S$$!}V^x=aN
+zkv)uRjq4cPj2FCiGjC;#Ws(&RbGX2@NVfCzY=+7In?seOShfSTGI+ZBxvX<aXaWFp
+Cavse9
+
+literal 0
+HcmV?d00001
+
+diff --git a/assets/codex-reset.png b/assets/codex-reset.png
+new file mode 100644
+index 0000000000000000000000000000000000000000..276e9babb74741b8e0e41725463639b88c6b992a
+GIT binary patch
+literal 127
+zcmeAS@N?(olHy`uVBq!ia0vp^93afW1|*O0@9PFqZk{fVAr-fhA3PHO$$#h@|F%Ph
+zK0Gaw6I3tWOkllHqS$Sy@cPfE$KqX{5u#UO|MfQ+-eC}GiDV6LSi_;hVZ`ao=))k(
+a%wW2I;<6b#bKe0?WbkzLb6Mw<&;$TZ>nTS7
+
+literal 0
+HcmV?d00001
+
+diff --git a/assets/codex.png b/assets/codex.png
+new file mode 100644
+index 0000000000000000000000000000000000000000..60de21effbe62733dc8907cf2cfc237c41149fbb
+GIT binary patch
+literal 116
+zcmeAS@N?(olHy`uVBq!ia0vp^93afW1|*O0@9PFq)}AhoAr-fhA3PHO$$#h@|F%Ph
+zK0Gaw6I3tWOkllHqS$Sy@cPfE$KqX{M>G$l>2H!?HmeT2)8H$<DU;#ZnkH5Sle1Mo
+PV;DSL{an^LB{Ts5uZkwM
+
+literal 0
+HcmV?d00001
+
+diff --git a/fixtures/codexbar-usage.json b/fixtures/codexbar-usage.json
+new file mode 100644
+index 0000000..e7ce58c
+--- /dev/null
++++ b/fixtures/codexbar-usage.json
+@@ -0,0 +1,36 @@
++[
++  {
++    "provider": "codex",
++    "source": "fixture",
++    "usage": {
++      "primary": {
++        "usedPercent": 10,
++        "windowMinutes": 300,
++        "resetsAt": "2026-08-18T01:00:00Z"
++      },
++      "secondary": {
++        "usedPercent": 37,
++        "windowMinutes": 10080,
++        "resetsAt": "2026-08-20T23:00:00Z"
++      },
++      "updatedAt": "2026-08-18T12:00:00Z"
++    }
++  },
++  {
++    "provider": "claude",
++    "source": "fixture",
++    "usage": {
++      "primary": {
++        "usedPercent": 22,
++        "windowMinutes": 300,
++        "resetsAt": "2026-08-18T02:00:00Z"
++      },
++      "secondary": {
++        "usedPercent": 59,
++        "windowMinutes": 10080,
++        "resetsAt": 1787439600
++      },
++      "updatedAt": 1787054400
++    }
++  }
++]
+diff --git a/railway.toml b/railway.toml
+new file mode 100644
+index 0000000..0a9fbe8
+--- /dev/null
++++ b/railway.toml
+@@ -0,0 +1,9 @@
++[build]
++builder = "DOCKERFILE"
++dockerfilePath = "Dockerfile"
++
++[deploy]
++healthcheckPath = "/health"
++healthcheckTimeout = 120
++restartPolicyType = "ON_FAILURE"
++restartPolicyMaxRetries = 10
+diff --git a/scripts/docker-entrypoint.sh b/scripts/docker-entrypoint.sh
+new file mode 100755
+index 0000000..0ed112b
+--- /dev/null
++++ b/scripts/docker-entrypoint.sh
+@@ -0,0 +1,11 @@
++#!/bin/sh
++set -eu
++
++mkdir -p \
++  "$HOME" \
++  "$CODEX_HOME" \
++  "$CLAUDE_CONFIG_DIR" \
++  "$(dirname "$CODEXBAR_CONFIG")"
++chmod 700 "$HOME" "$CODEX_HOME" "$CLAUDE_CONFIG_DIR" "$(dirname "$CODEXBAR_CONFIG")"
++
++exec "$@"
+diff --git a/scripts/generate_icons.py b/scripts/generate_icons.py
+new file mode 100755
+index 0000000..01c33aa
+--- /dev/null
++++ b/scripts/generate_icons.py
+@@ -0,0 +1,91 @@
++#!/usr/bin/env python3
++from __future__ import annotations
++
++import binascii
++import struct
++import zlib
++from pathlib import Path
++
++
++ROOT = Path(__file__).parents[1]
++ASSETS = ROOT / "assets"
++
++PALETTE = {
++    "B": (10, 15, 20, 255),
++    "T": (63, 224, 181, 255),
++    "W": (244, 248, 250, 255),
++    "D": (42, 20, 12, 255),
++    "O": (217, 119, 87, 255),
++    "C": (126, 211, 255, 255),
++}
++
++PATTERNS = {
++    "codex": [
++        "BBTTTBBB",
++        "BTTBTTBB",
++        "TTBBBTTB",
++        "TBTWTBTB",
++        "TBTWTBTB",
++        "BTTBBBTT",
++        "BBTTBTTB",
++        "BBBTTTBB",
++    ],
++    "codex-reset": [
++        "BBTTTBBB",
++        "BTTBTTBB",
++        "TTBBBTTB",
++        "TBTWTBTB",
++        "TBTWCCCC",
++        "BTTBCBBC",
++        "BBTTCWBC",
++        "BBBCCCCC",
++    ],
++    "claude": [
++        "DDDOODDD",
++        "DODOODOD",
++        "DDOOOODD",
++        "OOOOOOOO",
++        "OOOOOOOO",
++        "DDOOOODD",
++        "DODOODOD",
++        "DDDOODDD",
++    ],
++    "claude-reset": [
++        "DDDOODDD",
++        "DODOODOD",
++        "DDOOOODD",
++        "OOOOOOOO",
++        "OOOOWWWW",
++        "DDOOWDDW",
++        "DODOOWDW",
++        "DDDWWWWW",
++    ],
++}
++
++
++def chunk(kind: bytes, data: bytes) -> bytes:
++    return struct.pack(">I", len(data)) + kind + data + struct.pack(">I", binascii.crc32(kind + data))
++
++
++def png(pattern: list[str]) -> bytes:
++    assert len(pattern) == 8 and all(len(row) == 8 for row in pattern)
++    raw = b"".join(
++        b"\x00" + b"".join(bytes(PALETTE[pixel]) for pixel in row)
++        for row in pattern
++    )
++    return (
++        b"\x89PNG\r\n\x1a\n"
++        + chunk(b"IHDR", struct.pack(">IIBBBBB", 8, 8, 8, 6, 0, 0, 0))
++        + chunk(b"IDAT", zlib.compress(raw, level=9))
++        + chunk(b"IEND", b"")
++    )
++
++
++def main() -> None:
++    ASSETS.mkdir(exist_ok=True)
++    for name, pattern in PATTERNS.items():
++        (ASSETS / f"{name}.png").write_bytes(png(pattern))
++
++
++if __name__ == "__main__":
++    main()
+diff --git a/scripts/generate_token.py b/scripts/generate_token.py
+new file mode 100755
+index 0000000..4c0d7a1
+--- /dev/null
++++ b/scripts/generate_token.py
+@@ -0,0 +1,5 @@
++#!/usr/bin/env python3
++import secrets
++
++
++print(secrets.token_urlsafe(32))
+diff --git a/scripts/rollback.sh b/scripts/rollback.sh
+new file mode 100755
+index 0000000..9a9c737
+--- /dev/null
++++ b/scripts/rollback.sh
+@@ -0,0 +1,16 @@
++#!/bin/sh
++set -eu
++
++if [ "$#" -ne 1 ]; then
++  echo "usage: $0 <commit-to-revert>" >&2
++  exit 64
++fi
++
++git diff --quiet
++git diff --cached --quiet
++git rev-parse --verify "$1^{commit}" >/dev/null
++git revert --no-edit "$1"
++
++cat <<'EOF'
++Rollback commit created locally. Review it, run ./scripts/verify.sh, then push it to trigger Railway.
++EOF
+diff --git a/scripts/verify.sh b/scripts/verify.sh
+new file mode 100755
+index 0000000..5dfea1b
+--- /dev/null
++++ b/scripts/verify.sh
+@@ -0,0 +1,56 @@
++#!/bin/sh
++set -eu
++
++ROOT=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)
++cd "$ROOT"
++
++python3 scripts/generate_icons.py
++PYTHONPATH=src python3 -m compileall -q src
++PYTHONPATH=src python3 -m unittest discover -s tests -v
++
++port=$(python3 - <<'PY'
++import socket
++with socket.socket() as sock:
++    sock.bind(("127.0.0.1", 0))
++    print(sock.getsockname()[1])
++PY
++)
++token=verification-token-with-32-characters
++LAMETRIC_TOKEN="$token" \
++CODEXBAR_BINARY="$ROOT/tests/fixture_codexbar.py" \
++REFRESH_INTERVAL=3600 \
++HOST=127.0.0.1 \
++PORT="$port" \
++PYTHONPATH=src \
++python3 -m lametric_quota > /tmp/lametric-ai-quota-verify.log 2>&1 &
++pid=$!
++trap 'kill "$pid" 2>/dev/null || true; wait "$pid" 2>/dev/null || true' EXIT INT TERM
++
++python3 - "$port" "$token" <<'PY'
++import json
++import sys
++import time
++from urllib.request import urlopen
++
++port, token = sys.argv[1:]
++base = f"http://127.0.0.1:{port}"
++for _ in range(50):
++    try:
++        with urlopen(f"{base}/health", timeout=1) as response:
++            health = json.load(response)
++        if health.get("ready"):
++            break
++    except Exception:
++        pass
++    time.sleep(0.1)
++else:
++    raise SystemExit("service did not become ready")
++
++with urlopen(f"{base}/v1/lametric/{token}", timeout=2) as response:
++    payload = json.load(response)
++texts = [frame["text"] for frame in payload["frames"]]
++expected = ["63%", "2d11h", "41%", "4d11h"]
++if texts != expected:
++    raise SystemExit(f"unexpected frames: {texts!r}")
++print(json.dumps({"health": health["status"], "texts": texts, "frames": len(texts)}))
++PY
+diff --git a/scripts/verify_container.sh b/scripts/verify_container.sh
+new file mode 100755
+index 0000000..75ef0a8
+--- /dev/null
++++ b/scripts/verify_container.sh
+@@ -0,0 +1,54 @@
++#!/bin/sh
++set -eu
++
++ROOT=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)
++name="lametric-ai-quota-verify-$$"
++token=container-verification-token-1234567890
++
++docker run --rm -d --name "$name" \
++  -p 127.0.0.1::8080 \
++  -e LAMETRIC_TOKEN="$token" \
++  -e CODEXBAR_BINARY=/app/tests/fixture_codexbar.py \
++  -e REFRESH_INTERVAL=3600 \
++  -v "$ROOT/tests:/app/tests:ro" \
++  -v "$ROOT/fixtures:/app/fixtures:ro" \
++  lametric-ai-quota:local >/dev/null
++
++cleanup() {
++  docker stop "$name" >/dev/null 2>&1 || true
++}
++trap cleanup EXIT INT TERM
++
++mapping=$(docker port "$name" 8080/tcp)
++port=${mapping##*:}
++for _ in $(seq 1 50); do
++  if curl -fsS "http://127.0.0.1:$port/health" > /tmp/lametric-health.json 2>/dev/null; then
++    ready=$(python3 -c 'import json; print(str(json.load(open("/tmp/lametric-health.json"))["ready"]).lower())')
++    [ "$ready" = true ] && break
++  fi
++  sleep 0.2
++done
++
++echo '-- versions --'
++docker exec "$name" sh -lc 'codexbar --version; codex --version; claude --version'
++echo '-- health --'
++python3 - <<'PY'
++import json
++payload = json.load(open("/tmp/lametric-health.json"))
++print(json.dumps({"status": payload["status"], "ready": payload["ready"]}, separators=(",", ":")))
++PY
++echo '-- frames --'
++curl -fsS "http://127.0.0.1:$port/v1/lametric/$token" | python3 -c '
++import json, sys
++p = json.load(sys.stdin)
++print(json.dumps({
++    "texts": [f["text"] for f in p["frames"]],
++    "icons_are_png": [f["icon"].startswith("data:image/png;base64,") for f in p["frames"]],
++}, separators=(",", ":")))
++'
++echo '-- token absent from logs --'
++if docker logs "$name" 2>&1 | grep -F "$token" >/dev/null; then
++  echo TOKEN_LEAKED
++  exit 1
++fi
++echo TOKEN_NOT_LOGGED
+diff --git a/src/lametric_quota/__init__.py b/src/lametric_quota/__init__.py
+new file mode 100644
+index 0000000..bb2e288
+--- /dev/null
++++ b/src/lametric_quota/__init__.py
+@@ -0,0 +1,3 @@
++"""Codex and Claude weekly quota frames for LaMetric TIME."""
++
++__version__ = "0.1.0"
+diff --git a/src/lametric_quota/__main__.py b/src/lametric_quota/__main__.py
+new file mode 100644
+index 0000000..1f8d26f
+--- /dev/null
++++ b/src/lametric_quota/__main__.py
+@@ -0,0 +1,4 @@
++from .server import main
++
++
++main()
+diff --git a/src/lametric_quota/cache.py b/src/lametric_quota/cache.py
+new file mode 100644
+index 0000000..0aa8235
+--- /dev/null
++++ b/src/lametric_quota/cache.py
+@@ -0,0 +1,101 @@
++from __future__ import annotations
++
++import threading
++from concurrent.futures import ThreadPoolExecutor, as_completed
++from datetime import datetime, timezone
++from typing import Callable
++
++from .codexbar import ProviderQuota, SUPPORTED_PROVIDERS
++
++
++FetchQuota = Callable[[str], ProviderQuota]
++
++
++def _iso(value: datetime | None) -> str | None:
++    return value.astimezone(timezone.utc).isoformat().replace("+00:00", "Z") if value else None
++
++
++class QuotaCache:
++    def __init__(self, fetch: FetchQuota, refresh_seconds: int = 300) -> None:
++        self._fetch = fetch
++        self.refresh_seconds = refresh_seconds
++        self._lock = threading.Lock()
++        self._refresh_lock = threading.Lock()
++        self._quotas: dict[str, ProviderQuota] = {}
++        self._errors: dict[str, str] = {}
++        self._last_attempt: datetime | None = None
++        self._last_complete_success: datetime | None = None
++        self._stop = threading.Event()
++
++    def refresh(self) -> None:
++        if not self._refresh_lock.acquire(blocking=False):
++            return
++        try:
++            attempted_at = datetime.now(timezone.utc)
++            results: dict[str, ProviderQuota] = {}
++            errors: dict[str, str] = {}
++            with ThreadPoolExecutor(max_workers=len(SUPPORTED_PROVIDERS)) as pool:
++                futures = {pool.submit(self._fetch, provider): provider for provider in SUPPORTED_PROVIDERS}
++                for future in as_completed(futures):
++                    provider = futures[future]
++                    try:
++                        results[provider] = future.result()
++                    except Exception as exc:  # surfaced through health without credentials
++                        errors[provider] = str(exc)[:500]
++            with self._lock:
++                self._quotas.update(results)
++                self._errors = errors
++                self._last_attempt = attempted_at
++                if all(provider in results for provider in SUPPORTED_PROVIDERS):
++                    self._last_complete_success = attempted_at
++        finally:
++            self._refresh_lock.release()
++
++    def quotas(self) -> dict[str, ProviderQuota]:
++        with self._lock:
++            ready = all(provider in self._quotas for provider in SUPPORTED_PROVIDERS)
++        if not ready:
++            self.refresh()
++        with self._lock:
++            return dict(self._quotas)
++
++    def health(self) -> dict[str, object]:
++        with self._lock:
++            ready = all(provider in self._quotas for provider in SUPPORTED_PROVIDERS)
++            if not ready:
++                status = "starting"
++            elif self._errors:
++                status = "degraded"
++            else:
++                status = "ok"
++            providers = {
++                provider: {
++                    "available": provider in self._quotas,
++                    "error": "fetch_failed" if provider in self._errors else None,
++                    "updatedAt": _iso(
++                        self._quotas.get(provider).updated_at if provider in self._quotas else None
++                    ),
++                }
++                for provider in SUPPORTED_PROVIDERS
++            }
++            return {
++                "status": status,
++                "ready": ready,
++                "lastAttemptAt": _iso(self._last_attempt),
++                "lastCompleteSuccessAt": _iso(self._last_complete_success),
++                "refreshSeconds": self.refresh_seconds,
++                "providers": providers,
++            }
++
++    def start(self) -> threading.Thread:
++        def loop() -> None:
++            self.refresh()
++            while not self._stop.wait(self.refresh_seconds):
++                self.refresh()
++
++        thread = threading.Thread(target=loop, name="quota-refresh", daemon=True)
++        thread.start()
++        return thread
++
++    def stop(self) -> None:
++        self._stop.set()
+diff --git a/src/lametric_quota/codexbar.py b/src/lametric_quota/codexbar.py
+new file mode 100644
+index 0000000..cb2682f
+--- /dev/null
++++ b/src/lametric_quota/codexbar.py
+@@ -0,0 +1,146 @@
++from __future__ import annotations
++
++import json
++import os
++import subprocess
++from dataclasses import dataclass
++from datetime import datetime, timezone
++from typing import Any, Mapping, Sequence
++
++
++SUPPORTED_PROVIDERS = ("codex", "claude")
++
++
++@dataclass(frozen=True)
++class ProviderQuota:
++    provider: str
++    remaining_percent: float
++    reset_at: datetime
++    updated_at: datetime | None
++
++
++def parse_timestamp(value: Any) -> datetime:
++    """Parse CodexBar's ISO-8601 or Foundation epoch timestamp."""
++    if isinstance(value, bool):
++        raise ValueError("timestamp must not be a boolean")
++    if isinstance(value, (int, float)):
++        seconds = float(value)
++        if abs(seconds) >= 1_000_000_000_000:
++            seconds /= 1000
++        return datetime.fromtimestamp(seconds, tz=timezone.utc)
++    if isinstance(value, str):
++        normalized = value.strip()
++        if normalized.endswith("Z"):
++            normalized = normalized[:-1] + "+00:00"
++        parsed = datetime.fromisoformat(normalized)
++        if parsed.tzinfo is None:
++            parsed = parsed.replace(tzinfo=timezone.utc)
++        return parsed.astimezone(timezone.utc)
++    raise ValueError(f"unsupported timestamp: {value!r}")
++
++
++def _provider_payload(payload: Any, provider: str) -> Mapping[str, Any]:
++    candidates: Sequence[Any]
++    if isinstance(payload, list):
++        candidates = payload
++    else:
++        candidates = [payload]
++    for candidate in candidates:
++        if isinstance(candidate, Mapping) and candidate.get("provider") == provider:
++            return candidate
++    raise ValueError(f"CodexBar payload has no {provider!r} provider")
++
++
++def _weekly_window(usage: Mapping[str, Any]) -> Mapping[str, Any]:
++    secondary = usage.get("secondary")
++    if isinstance(secondary, Mapping):
++        return secondary
++
++    # Forward-compatible fallback if CodexBar moves to named windows.
++    for named in usage.get("extraRateWindows") or []:
++        if not isinstance(named, Mapping):
++            continue
++        window_id = str(named.get("id", "")).lower()
++        title = str(named.get("title", "")).lower()
++        window = named.get("window")
++        if "week" in window_id or "week" in title:
++            if isinstance(window, Mapping):
++                return window
++    raise ValueError("CodexBar payload has no weekly window")
++
++
++def parse_provider_quota(payload: Any, provider: str) -> ProviderQuota:
++    if provider not in SUPPORTED_PROVIDERS:
++        raise ValueError(f"unsupported provider: {provider}")
++    item = _provider_payload(payload, provider)
++    error = item.get("error")
++    if error:
++        raise ValueError(f"CodexBar {provider} error: {error}")
++    usage = item.get("usage")
++    if not isinstance(usage, Mapping):
++        raise ValueError(f"CodexBar {provider} payload has no usage")
++    weekly = _weekly_window(usage)
++    used = weekly.get("usedPercent")
++    if isinstance(used, bool) or not isinstance(used, (int, float)):
++        raise ValueError(f"CodexBar {provider} weekly usedPercent is missing")
++    reset_value = weekly.get("resetsAt")
++    if reset_value is None:
++        raise ValueError(f"CodexBar {provider} weekly reset is missing")
++    updated_value = usage.get("updatedAt")
++    return ProviderQuota(
++        provider=provider,
++        remaining_percent=max(0.0, min(100.0, 100.0 - float(used))),
++        reset_at=parse_timestamp(reset_value),
++        updated_at=parse_timestamp(updated_value) if updated_value is not None else None,
++    )
++
++
++class CodexBarClient:
++    def __init__(
++        self,
++        binary: str | None = None,
++        timeout_seconds: int | None = None,
++        sources: Mapping[str, str] | None = None,
++    ) -> None:
++        self.binary = binary or os.environ.get("CODEXBAR_BINARY", "codexbar")
++        self.timeout_seconds = timeout_seconds or int(
++            os.environ.get("CODEXBAR_TIMEOUT_SECONDS", "60")
++        )
++        self.sources = dict(
++            sources
++            or {
++                "codex": os.environ.get("CODEXBAR_CODEX_SOURCE", "oauth"),
++                "claude": os.environ.get("CODEXBAR_CLAUDE_SOURCE", "oauth"),
++            }
++        )
++
++    def fetch(self, provider: str) -> ProviderQuota:
++        source = self.sources.get(provider, "oauth")
++        command = [
++            self.binary,
++            "usage",
++            "--provider",
++            provider,
++            "--source",
++            source,
++            "--format",
++            "json",
++            "--json-only",
++        ]
++        completed = subprocess.run(
++            command,
++            check=False,
++            capture_output=True,
++            text=True,
++            timeout=self.timeout_seconds,
++        )
++        if completed.returncode != 0:
++            detail = completed.stderr.strip() or completed.stdout.strip() or "no output"
++            raise RuntimeError(
++                f"CodexBar {provider} exited {completed.returncode}: {detail[:500]}"
++            )
++        try:
++            payload = json.loads(completed.stdout)
++        except json.JSONDecodeError as exc:
++            raise RuntimeError(f"CodexBar {provider} returned invalid JSON") from exc
++        return parse_provider_quota(payload, provider)
+diff --git a/src/lametric_quota/frames.py b/src/lametric_quota/frames.py
+new file mode 100644
+index 0000000..225eb58
+--- /dev/null
++++ b/src/lametric_quota/frames.py
+@@ -0,0 +1,59 @@
++from __future__ import annotations
++
++import math
++from datetime import datetime, timezone
++from typing import Callable, Mapping
++
++from .codexbar import ProviderQuota
++from .icons import icon_data_uri
++
++
++PROVIDER_ORDER = ("codex", "claude")
++
++
++def format_countdown(reset_at: datetime, now: datetime | None = None) -> str:
++    reference = now or datetime.now(timezone.utc)
++    if reference.tzinfo is None:
++        reference = reference.replace(tzinfo=timezone.utc)
++    if reset_at.tzinfo is None:
++        reset_at = reset_at.replace(tzinfo=timezone.utc)
++    seconds = max(0, math.ceil((reset_at - reference).total_seconds()))
++    total_minutes = math.ceil(seconds / 60)
++    days, remainder = divmod(total_minutes, 24 * 60)
++    hours, minutes = divmod(remainder, 60)
++    if days:
++        return f"{days}d{hours:02d}h"
++    if hours:
++        return f"{hours}h{minutes:02d}m"
++    return f"{minutes}m"
++
++
++def _rounded_percent(value: float) -> int:
++    return int(math.floor(max(0.0, min(100.0, value)) + 0.5))
++
++
++def build_lametric_payload(
++    quotas: Mapping[str, ProviderQuota],
++    *,
++    now: datetime | None = None,
++    icon_loader: Callable[[str], str] = icon_data_uri,
++) -> dict[str, list[dict[str, str]]]:
++    reference = now or datetime.now(timezone.utc)
++    frames: list[dict[str, str]] = []
++    for provider in PROVIDER_ORDER:
++        quota = quotas.get(provider)
++        if quota is None:
++            raise ValueError(f"missing quota for {provider}")
++        frames.extend(
++            [
++                {
++                    "icon": icon_loader(provider),
++                    "text": f"{_rounded_percent(quota.remaining_percent)}%",
++                },
++                {
++                    "icon": icon_loader(f"{provider}-reset"),
++                    "text": format_countdown(quota.reset_at, reference),
++                },
++            ]
++        )
++    return {"frames": frames}
+diff --git a/src/lametric_quota/icons.py b/src/lametric_quota/icons.py
+new file mode 100644
+index 0000000..c66bd35
+--- /dev/null
++++ b/src/lametric_quota/icons.py
+@@ -0,0 +1,17 @@
++from __future__ import annotations
++
++import base64
++from functools import lru_cache
++from pathlib import Path
++
++
++ASSET_DIR = Path(__file__).resolve().parents[2] / "assets"
++ICON_NAMES = frozenset({"codex", "codex-reset", "claude", "claude-reset"})
++
++
++@lru_cache(maxsize=len(ICON_NAMES))
++def icon_data_uri(name: str) -> str:
++    if name not in ICON_NAMES:
++        raise ValueError(f"unknown icon: {name}")
++    encoded = base64.b64encode((ASSET_DIR / f"{name}.png").read_bytes()).decode("ascii")
++    return f"data:image/png;base64,{encoded}"
+diff --git a/src/lametric_quota/server.py b/src/lametric_quota/server.py
+new file mode 100644
+index 0000000..08bacde
+--- /dev/null
++++ b/src/lametric_quota/server.py
+@@ -0,0 +1,91 @@
++from __future__ import annotations
++
++import hmac
++import json
++import os
++from http import HTTPStatus
++from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
++from typing import Any
++from urllib.parse import unquote, urlsplit
++
++from . import __version__
++from .cache import QuotaCache
++from .codexbar import CodexBarClient
++from .frames import build_lametric_payload
++
++
++def _json_bytes(payload: Any) -> bytes:
++    return json.dumps(payload, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
++
++
++def make_handler(cache: QuotaCache, token: str) -> type[BaseHTTPRequestHandler]:
++    expected_path = f"/v1/lametric/{token}"
++
++    class Handler(BaseHTTPRequestHandler):
++        server_version = "LaMetricAIQuota/" + __version__
++
++        def do_GET(self) -> None:  # noqa: N802 - stdlib handler API
++            path = unquote(urlsplit(self.path).path)
++            if path == "/health":
++                self._send(HTTPStatus.OK, cache.health())
++                return
++            if not hmac.compare_digest(path, expected_path):
++                self._send(HTTPStatus.NOT_FOUND, {"error": "not_found"})
++                return
++            quotas = cache.quotas()
++            if len(quotas) != 2:
++                self._send(HTTPStatus.SERVICE_UNAVAILABLE, {"error": "quota_not_ready"})
++                return
++            self._send(HTTPStatus.OK, build_lametric_payload(quotas))
++
++        def _send(self, status: HTTPStatus, payload: Any) -> None:
++            body = _json_bytes(payload)
++            self.send_response(status.value)
++            self.send_header("Content-Type", "application/json; charset=utf-8")
++            self.send_header("Content-Length", str(len(body)))
++            self.send_header("Cache-Control", "no-store")
++            self.send_header("X-Content-Type-Options", "nosniff")
++            self.end_headers()
++            self.wfile.write(body)
++
++        def log_request(self, code: int | str = "-", size: int | str = "-") -> None:
++            # Keep Railway logs useful without recording the secret URL path.
++            print(
++                json.dumps(
++                    {
++                        "event": "http",
++                        "client": self.client_address[0],
++                        "method": self.command,
++                        "status": code,
++                        "size": size,
++                    }
++                )
++            )
++
++        def log_message(self, fmt: str, *args: object) -> None:
++            return
++
++    return Handler
++
++
++def main() -> None:
++    token = os.environ.get("LAMETRIC_TOKEN", "")
++    if len(token) < 24:
++        raise SystemExit("LAMETRIC_TOKEN must contain at least 24 characters")
++    host = os.environ.get("HOST", "0.0.0.0")
++    port = int(os.environ.get("PORT", "8080"))
++    refresh_seconds = int(os.environ.get("REFRESH_INTERVAL", "300"))
++    client = CodexBarClient()
++    cache = QuotaCache(client.fetch, refresh_seconds=refresh_seconds)
++    cache.start()
++    server = ThreadingHTTPServer((host, port), make_handler(cache, token))
++    print(json.dumps({"event": "started", "host": host, "port": port, "version": __version__}))
++    try:
++        server.serve_forever()
++    finally:
++        cache.stop()
++        server.server_close()
++
++
++if __name__ == "__main__":
++    main()
+diff --git a/tests/fixture_codexbar.py b/tests/fixture_codexbar.py
+new file mode 100755
+index 0000000..28f94d1
+--- /dev/null
++++ b/tests/fixture_codexbar.py
+@@ -0,0 +1,18 @@
++#!/usr/bin/env python3
++from __future__ import annotations
++
++import json
++import sys
++from datetime import datetime, timedelta, timezone
++from pathlib import Path
++
++
++provider = sys.argv[sys.argv.index("--provider") + 1]
++payload = json.loads((Path(__file__).parents[1] / "fixtures" / "codexbar-usage.json").read_text())
++offsets = {"codex": timedelta(days=2, hours=11), "claude": timedelta(days=4, hours=11)}
++for item in payload:
++    if item["provider"] == provider:
++        item["usage"]["secondary"]["resetsAt"] = (
++            datetime.now(timezone.utc) + offsets[provider]
++        ).isoformat()
++print(json.dumps([item for item in payload if item["provider"] == provider]))
+diff --git a/tests/test_cache.py b/tests/test_cache.py
+new file mode 100644
+index 0000000..5f5ce51
+--- /dev/null
++++ b/tests/test_cache.py
+@@ -0,0 +1,39 @@
++from __future__ import annotations
++
++import unittest
++from datetime import datetime, timezone
++
++from lametric_quota.cache import QuotaCache
++from lametric_quota.codexbar import ProviderQuota
++
++
++NOW = datetime(2026, 8, 18, 12, tzinfo=timezone.utc)
++
++
++def quota(provider: str) -> ProviderQuota:
++    return ProviderQuota(provider, 50, NOW, NOW)
++
++
++class CacheTests(unittest.TestCase):
++    def test_retains_last_good_provider_during_partial_failure(self) -> None:
++        failing = set()
++
++        def fetch(provider: str) -> ProviderQuota:
++            if provider in failing:
++                raise RuntimeError("sensitive provider diagnostic")
++            return quota(provider)
++
++        cache = QuotaCache(fetch)
++        cache.refresh()
++        failing.add("claude")
++        cache.refresh()
++
++        self.assertEqual(set(cache.quotas()), {"codex", "claude"})
++        health = cache.health()
++        self.assertEqual(health["status"], "degraded")
++        self.assertEqual(health["providers"]["claude"]["error"], "fetch_failed")
++        self.assertNotIn("sensitive", str(health))
++
++
++if __name__ == "__main__":
++    unittest.main()
+diff --git a/tests/test_codexbar.py b/tests/test_codexbar.py
+new file mode 100644
+index 0000000..a2e611f
+--- /dev/null
++++ b/tests/test_codexbar.py
+@@ -0,0 +1,37 @@
++from __future__ import annotations
++
++import json
++import unittest
++from pathlib import Path
++
++from lametric_quota.codexbar import parse_provider_quota
++
++
++FIXTURE = Path(__file__).parents[1] / "fixtures" / "codexbar-usage.json"
++
++
++class CodexBarParsingTests(unittest.TestCase):
++    def setUp(self) -> None:
++        self.payload = json.loads(FIXTURE.read_text())
++
++    def test_extracts_weekly_remaining_and_reset_from_array(self) -> None:
++        codex = parse_provider_quota(self.payload, "codex")
++        claude = parse_provider_quota(self.payload, "claude")
++
++        self.assertEqual(codex.remaining_percent, 63)
++        self.assertEqual(codex.reset_at.isoformat(), "2026-08-20T23:00:00+00:00")
++        self.assertEqual(claude.remaining_percent, 41)
++        self.assertEqual(claude.reset_at.isoformat(), "2026-08-22T23:00:00+00:00")
++
++    def test_accepts_single_provider_object(self) -> None:
++        quota = parse_provider_quota(self.payload[0], "codex")
++        self.assertEqual(quota.provider, "codex")
++
++    def test_rejects_missing_weekly_window(self) -> None:
++        payload = {"provider": "codex", "usage": {"primary": {"usedPercent": 2}}}
++        with self.assertRaisesRegex(ValueError, "weekly"):
++            parse_provider_quota(payload, "codex")
++
++
++if __name__ == "__main__":
++    unittest.main()
+diff --git a/tests/test_frames.py b/tests/test_frames.py
+new file mode 100644
+index 0000000..ee2ebd5
+--- /dev/null
++++ b/tests/test_frames.py
+@@ -0,0 +1,53 @@
++from __future__ import annotations
++
++import json
++import unittest
++from datetime import datetime, timezone
++from pathlib import Path
++
++from lametric_quota.codexbar import parse_provider_quota
++from lametric_quota.frames import build_lametric_payload, format_countdown
++
++
++FIXTURE = Path(__file__).parents[1] / "fixtures" / "codexbar-usage.json"
++
++
++class FrameTests(unittest.TestCase):
++    def test_exact_four_frame_contract(self) -> None:
++        raw = json.loads(FIXTURE.read_text())
++        quotas = {
++            provider: parse_provider_quota(raw, provider)
++            for provider in ("codex", "claude")
++        }
++        payload = build_lametric_payload(
++            quotas,
++            now=datetime(2026, 8, 18, 12, 0, tzinfo=timezone.utc),
++            icon_loader=lambda name: f"data:image/png;base64,{name}",
++        )
++
++        self.assertEqual(
++            payload,
++            {
++                "frames": [
++                    {"icon": "data:image/png;base64,codex", "text": "63%"},
++                    {"icon": "data:image/png;base64,codex-reset", "text": "2d11h"},
++                    {"icon": "data:image/png;base64,claude", "text": "41%"},
++                    {"icon": "data:image/png;base64,claude-reset", "text": "4d11h"},
++                ]
++            },
++        )
++
++    def test_countdown_switches_to_hours_and_minutes(self) -> None:
++        now = datetime(2026, 8, 18, 12, 0, tzinfo=timezone.utc)
++        self.assertEqual(
++            format_countdown(datetime(2026, 8, 18, 23, 42, tzinfo=timezone.utc), now),
++            "11h42m",
++        )
++        self.assertEqual(
++            format_countdown(datetime(2026, 8, 18, 12, 42, tzinfo=timezone.utc), now),
++            "42m",
++        )
++
++
++if __name__ == "__main__":
++    unittest.main()
+diff --git a/tests/test_icons.py b/tests/test_icons.py
+new file mode 100644
+index 0000000..fd21ade
+--- /dev/null
++++ b/tests/test_icons.py
+@@ -0,0 +1,24 @@
++from __future__ import annotations
++
++import struct
++import unittest
++from pathlib import Path
++
++from lametric_quota.icons import icon_data_uri
++
++
++ASSETS = Path(__file__).parents[1] / "assets"
++
++
++class IconTests(unittest.TestCase):
++    def test_every_icon_is_an_exact_8_by_8_png(self) -> None:
++        for name in ("codex", "codex-reset", "claude", "claude-reset"):
++            data = (ASSETS / f"{name}.png").read_bytes()
++            self.assertEqual(data[:8], b"\x89PNG\r\n\x1a\n")
++            width, height = struct.unpack(">II", data[16:24])
++            self.assertEqual((width, height), (8, 8))
++            self.assertTrue(icon_data_uri(name).startswith("data:image/png;base64,"))
++
++
++if __name__ == "__main__":
++    unittest.main()
+diff --git a/tests/test_server.py b/tests/test_server.py
+new file mode 100644
+index 0000000..ed6c85e
+--- /dev/null
++++ b/tests/test_server.py
+@@ -0,0 +1,61 @@
++from __future__ import annotations
++
++import io
++import json
++import threading
++import unittest
++from contextlib import redirect_stdout
++from datetime import datetime, timedelta, timezone
++from http.server import ThreadingHTTPServer
++from urllib.error import HTTPError
++from urllib.request import urlopen
++
++from lametric_quota.cache import QuotaCache
++from lametric_quota.codexbar import ProviderQuota
++from lametric_quota.server import make_handler
++
++
++TOKEN = "test-token-with-at-least-24-characters"
++
++
++def fetch(provider: str) -> ProviderQuota:
++    now = datetime.now(timezone.utc)
++    return ProviderQuota(provider, 50, now + timedelta(days=2), now)
++
++
++class ServerTests(unittest.TestCase):
++    def setUp(self) -> None:
++        self.cache = QuotaCache(fetch)
++        self.cache.refresh()
++        self.server = ThreadingHTTPServer(("127.0.0.1", 0), make_handler(self.cache, TOKEN))
++        self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
++        self.thread.start()
++        self.base = f"http://127.0.0.1:{self.server.server_port}"
++
++    def tearDown(self) -> None:
++        self.server.shutdown()
++        self.server.server_close()
++        self.thread.join(timeout=2)
++
++    def test_health_is_public_and_redacted(self) -> None:
++        with urlopen(f"{self.base}/health") as response:
++            payload = json.load(response)
++        self.assertTrue(payload["ready"])
++        self.assertEqual(payload["status"], "ok")
++
++    def test_secret_path_returns_four_frames_without_logging_token(self) -> None:
++        output = io.StringIO()
++        with redirect_stdout(output):
++            with urlopen(f"{self.base}/v1/lametric/{TOKEN}") as response:
++                payload = json.load(response)
++        self.assertEqual(len(payload["frames"]), 4)
++        self.assertNotIn(TOKEN, output.getvalue())
++
++    def test_wrong_path_is_hidden_as_404(self) -> None:
++        with self.assertRaises(HTTPError) as raised:
++            urlopen(f"{self.base}/v1/lametric/wrong")
++        self.assertEqual(raised.exception.code, 404)
++
++
++if __name__ == "__main__":
++    unittest.main()
