@@ -29,10 +29,26 @@ class FrameTests(unittest.TestCase):
             payload,
             {
                 "frames": [
-                    {"icon": "data:image/png;base64,codex", "text": "63%"},
-                    {"icon": "data:image/png;base64,codex", "text": "2d11h"},
-                    {"icon": "data:image/png;base64,claude", "text": "41%"},
-                    {"icon": "data:image/png;base64,claude", "text": "4d11h"},
+                    {
+                        "icon": "data:image/png;base64,codex",
+                        "text": "63%",
+                        "duration": 5000,
+                    },
+                    {
+                        "icon": "data:image/png;base64,codex",
+                        "text": "2d11h",
+                        "duration": 5000,
+                    },
+                    {
+                        "icon": "data:image/png;base64,claude",
+                        "text": "41%",
+                        "duration": 5000,
+                    },
+                    {
+                        "icon": "data:image/png;base64,claude",
+                        "text": "4d11h",
+                        "duration": 5000,
+                    },
                 ]
             },
         )

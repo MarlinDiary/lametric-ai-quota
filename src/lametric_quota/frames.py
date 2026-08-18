@@ -9,6 +9,7 @@ from .icons import icon_data_uri
 
 
 PROVIDER_ORDER = ("codex", "claude")
+FRAME_DURATION_MS = 5000
 
 
 def format_countdown(reset_at: datetime, now: datetime | None = None) -> str:
@@ -37,9 +38,9 @@ def build_lametric_payload(
     *,
     now: datetime | None = None,
     icon_loader: Callable[[str], str] = icon_data_uri,
-) -> dict[str, list[dict[str, str]]]:
+) -> dict[str, list[dict[str, object]]]:
     reference = now or datetime.now(timezone.utc)
-    frames: list[dict[str, str]] = []
+    frames: list[dict[str, object]] = []
     for provider in PROVIDER_ORDER:
         quota = quotas.get(provider)
         if quota is None:
@@ -49,10 +50,12 @@ def build_lametric_payload(
                 {
                     "icon": icon_loader(provider),
                     "text": f"{_rounded_percent(quota.remaining_percent)}%",
+                    "duration": FRAME_DURATION_MS,
                 },
                 {
                     "icon": icon_loader(provider),
                     "text": format_countdown(quota.reset_at, reference),
+                    "duration": FRAME_DURATION_MS,
                 },
             ]
         )

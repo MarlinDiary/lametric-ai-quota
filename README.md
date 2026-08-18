@@ -13,6 +13,8 @@ The device rotates exactly four frames:
 [Claude] 4d07h
 ```
 
+Each frame stays on screen for 5 seconds before the next frame appears.
+
 The percentage is weekly quota **remaining**. The second frame is time until
 the weekly reset. There are no `W` or `R` prefixes.
 

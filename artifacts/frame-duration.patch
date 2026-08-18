@@ -1,0 +1,97 @@
+diff --git a/README.md b/README.md
+index b795cdd..e8eafff 100644
+--- a/README.md
++++ b/README.md
+@@ -13,6 +13,8 @@ The device rotates exactly four frames:
+ [Claude] 4d07h
+ ```
+ 
++Each frame stays on screen for 5 seconds before the next frame appears.
++
+ The percentage is weekly quota **remaining**. The second frame is time until
+ the weekly reset. There are no `W` or `R` prefixes.
+ 
+diff --git a/src/lametric_quota/frames.py b/src/lametric_quota/frames.py
+index 11136b6..73ac1ad 100644
+--- a/src/lametric_quota/frames.py
++++ b/src/lametric_quota/frames.py
+@@ -9,6 +9,7 @@ from .icons import icon_data_uri
+ 
+ 
+ PROVIDER_ORDER = ("codex", "claude")
++FRAME_DURATION_MS = 5000
+ 
+ 
+ def format_countdown(reset_at: datetime, now: datetime | None = None) -> str:
+@@ -37,9 +38,9 @@ def build_lametric_payload(
+     *,
+     now: datetime | None = None,
+     icon_loader: Callable[[str], str] = icon_data_uri,
+-) -> dict[str, list[dict[str, str]]]:
++) -> dict[str, list[dict[str, object]]]:
+     reference = now or datetime.now(timezone.utc)
+-    frames: list[dict[str, str]] = []
++    frames: list[dict[str, object]] = []
+     for provider in PROVIDER_ORDER:
+         quota = quotas.get(provider)
+         if quota is None:
+@@ -49,10 +50,12 @@ def build_lametric_payload(
+                 {
+                     "icon": icon_loader(provider),
+                     "text": f"{_rounded_percent(quota.remaining_percent)}%",
++                    "duration": FRAME_DURATION_MS,
+                 },
+                 {
+                     "icon": icon_loader(provider),
+                     "text": format_countdown(quota.reset_at, reference),
++                    "duration": FRAME_DURATION_MS,
+                 },
+             ]
+         )
+diff --git a/tests/test_frames.py b/tests/test_frames.py
+index dfe40f5..4556887 100644
+--- a/tests/test_frames.py
++++ b/tests/test_frames.py
+@@ -29,10 +29,26 @@ class FrameTests(unittest.TestCase):
+             payload,
+             {
+                 "frames": [
+-                    {"icon": "data:image/png;base64,codex", "text": "63%"},
+-                    {"icon": "data:image/png;base64,codex", "text": "2d11h"},
+-                    {"icon": "data:image/png;base64,claude", "text": "41%"},
+-                    {"icon": "data:image/png;base64,claude", "text": "4d11h"},
++                    {
++                        "icon": "data:image/png;base64,codex",
++                        "text": "63%",
++                        "duration": 5000,
++                    },
++                    {
++                        "icon": "data:image/png;base64,codex",
++                        "text": "2d11h",
++                        "duration": 5000,
++                    },
++                    {
++                        "icon": "data:image/png;base64,claude",
++                        "text": "41%",
++                        "duration": 5000,
++                    },
++                    {
++                        "icon": "data:image/png;base64,claude",
++                        "text": "4d11h",
++                        "duration": 5000,
++                    },
+                 ]
+             },
+         )
+diff --git a/tests/test_server.py b/tests/test_server.py
+index 4fa3fb9..8b891ff 100644
+--- a/tests/test_server.py
++++ b/tests/test_server.py
+@@ -58,6 +58,7 @@ class ServerTests(unittest.TestCase):
+             with urlopen(f"{self.base}/v1/lametric/{TOKEN}") as response:
+                 payload = json.load(response)
+         self.assertEqual(len(payload["frames"]), 4)
++        self.assertEqual([frame["duration"] for frame in payload["frames"]], [5000] * 4)
+         self.assertNotIn(TOKEN, output.getvalue())
+ 
+     def test_wrong_path_is_hidden_as_404(self) -> None:

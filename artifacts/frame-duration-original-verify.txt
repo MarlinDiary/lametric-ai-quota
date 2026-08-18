@@ -1,0 +1,5 @@
+artifacts/frame-duration-original-c9f067c.bundle is okay
+The bundle contains this ref:
+c9f067c41f8e021a2d27978772bbc54ed58ceade HEAD
+The bundle records a complete history.
+The bundle uses this hash algorithm: sha1

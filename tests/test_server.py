@@ -58,6 +58,7 @@ class ServerTests(unittest.TestCase):
             with urlopen(f"{self.base}/v1/lametric/{TOKEN}") as response:
                 payload = json.load(response)
         self.assertEqual(len(payload["frames"]), 4)
+        self.assertEqual([frame["duration"] for frame in payload["frames"]], [5000] * 4)
         self.assertNotIn(TOKEN, output.getvalue())
 
     def test_wrong_path_is_hidden_as_404(self) -> None:

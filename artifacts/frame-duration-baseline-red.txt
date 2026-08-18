@@ -1,0 +1,16 @@
+F
+======================================================================
+FAIL: test_exact_four_frame_two_icon_contract (tests.test_frames.FrameTests)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/marlin/Documents/Codex/2026-08-09/new-chat-2/work/lametric-ai-quota/tests/test_frames.py", line 28, in test_exact_four_frame_two_icon_contract
+    self.assertEqual(
+AssertionError: {'fra[55 chars]'63%'}, {'icon': 'data:image/png;base64,codex'[131 chars]h'}]} != {'fra[55 chars]'63%', 'duration': 5000}, {'icon': 'data:image[203 chars]00}]}
+Diff is 1037 characters long. Set self.maxDiff to None to see it.
+
+----------------------------------------------------------------------
+Ran 1 test in 0.002s
+
+FAILED (failures=1)
+
+exit_status=1
