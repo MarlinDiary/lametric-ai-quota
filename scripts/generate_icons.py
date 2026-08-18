@@ -28,14 +28,14 @@ PATTERNS = {
         "WWWWWWWW",
     ],
     "claude": [
-        "..OOOOO.",
-        ".OO.....",
-        ".O......",
-        ".O......",
-        ".O......",
-        ".O......",
-        ".OO.....",
-        "..OOOOO.",
+        ".OOOOOO.",
+        "OOOOOOO.",
+        "OO......",
+        "OO......",
+        "OO......",
+        "OO......",
+        "OOOOOOO.",
+        ".OOOOOO.",
     ],
 }
 

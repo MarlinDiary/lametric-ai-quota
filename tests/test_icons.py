@@ -26,10 +26,10 @@ class IconTests(unittest.TestCase):
 
     def test_icons_use_only_the_requested_opaque_color(self) -> None:
         expected = {
-            "codex": {(255, 255, 255, 255)},
-            "claude": {(217, 119, 87, 255)},
+            "codex": ({(255, 255, 255, 255)}, 33),
+            "claude": ({(217, 119, 87, 255)}, 34),
         }
-        for name, expected_colors in expected.items():
+        for name, (expected_colors, expected_opaque_pixels) in expected.items():
             data = (ASSETS / f"{name}.png").read_bytes()
             offset = 8
             idat = bytearray()
@@ -49,7 +49,9 @@ class IconTests(unittest.TestCase):
                     tuple(scanline[index : index + 4])
                     for index in range(1, 33, 4)
                 )
-            self.assertEqual({pixel for pixel in pixels if pixel[3]}, expected_colors)
+            opaque_pixels = [pixel for pixel in pixels if pixel[3]]
+            self.assertEqual(set(opaque_pixels), expected_colors)
+            self.assertEqual(len(opaque_pixels), expected_opaque_pixels)
 
 
 if __name__ == "__main__":

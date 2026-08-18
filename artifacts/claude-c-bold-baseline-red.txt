@@ -1,0 +1,17 @@
+$ PYTHONPATH=src python3 -m unittest tests.test_icons -v
+test_exactly_two_icons_are_exact_8_by_8_pngs (tests.test_icons.IconTests) ... ok
+test_icons_use_only_the_requested_opaque_color (tests.test_icons.IconTests) ... FAIL
+
+======================================================================
+FAIL: test_icons_use_only_the_requested_opaque_color (tests.test_icons.IconTests)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/marlin/Documents/Codex/2026-08-09/new-chat-2/work/lametric-ai-quota/tests/test_icons.py", line 54, in test_icons_use_only_the_requested_opaque_color
+    self.assertEqual(len(opaque_pixels), expected_opaque_pixels)
+AssertionError: 18 != 34
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.001s
+
+FAILED (failures=1)
+EXIT_STATUS=1

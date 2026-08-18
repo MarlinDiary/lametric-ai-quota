@@ -1,0 +1,88 @@
+diff --git a/artifacts/icon-preview.png b/artifacts/icon-preview.png
+index fa93c9c03334c1aea075bb28faeee251dc745991..a9abb8c1cb839f9e4df5e12f6a4cd707cd2b25f7 100644
+GIT binary patch
+literal 535
+zcmeAS@N?(olHy`uVBq!ia0y~yU^D=-7jQ5ENtTY~!9am~o-U3d6}R5rbzIeyAkq3T
+z*~CC&!_*x-;*YChd`=gr@=BTHG7ECd+W*Vu^P{+jPqT|QtXl8eU^K^uNkB!x0~>aj
+zpy2Uf_U9}7d*c25b6uz3uD$qP{`WcOe+y;h^i+PF<l+!w;p7k!P{G6=KdVoOY`cGZ
+z*V6AxzxC>2u>fQ^1PfH3ShJUZ%l0$t?oWT=#MH#X!iftnIbi$bO6}smD##`xOhPiT
+z!d_(u*oFoL#|hZ5!yCoV`)eOx*_)bKZx1sL(<qRUKnLF496smzjq>(i^|v2BbZVNv
+z24W<mW0L|pZhVu^zw^s)iIZ!7?_K;>Iu`0nnA>19#DGNMRljaka6JHd+Ytw5;Z*(2
+ZptWD=X|a>a24I9Uc)I$ztaD0e0sy@aw8a1b
+
+literal 542
+zcmeAS@N?(olHy`uVBq!ia0y~yU^D=-7jQ5ENtTY~!9anho-U3d6}R5r-N@S%AkucR
+zd*cBX;W;ga5^a?dZH6<B96EH3H7D-SVeWas*-0MzVrJW$<X&f=aQLV)gCkQD3pUKc
+z*~GGM=d`+qf2*pp>`Qjr2mPH_D)s->PyWx3oSOEpX;5&S(4fHR*o1)_Pwa2+X@38G
+z)5&f6Yxm}_*{fcnh^h|N%9ai7JvF}_s!v;d{Vf#h;Q%xiWHdJ1=&_?+=dSrJ|3^+p
+zW`LZEiWB)I@9}f$sc;Ahs3>?~#{%CbY`nj3V@dwZx8EPbj6*dBW^5vVW!1N?+fmCm
+zzW982PelgAV36U+7-mtxs?6PXMtkEYT3ng8xrD#6Wb5}idMZCob8!f<aAIPRAsxQo
+lCNyxvy@9ESh4alD=A(;MR;_;6TMmqO22WQ%mvv4FO#q9Vrtts(
+
+diff --git a/assets/claude.png b/assets/claude.png
+index 9b9d4999abe72d7a99a604ff18589bce3051cad3..09fc2fd7a3f3235e6742c84ced5b82cb332a35c8 100644
+GIT binary patch
+delta 59
+zcma!ynxJB)=;`7ZQgJIefuU*k(}({zCbHE`lHigkV6@UY@Y2KS9t*>k_ffo7JS)u^
+OfWXt$&t;ucLK6U^?iEA;
+
+delta 58
+zcma!woS<T=;OXKRQgJIep`mH^(}({r8Zz%vVb*I1pVY_I5!Uj~mqCtIf2~oyh&%%j
+Nc)I$ztaD0e0sx-)6x{#-
+
+diff --git a/scripts/generate_icons.py b/scripts/generate_icons.py
+index 8e920ed..2165dcd 100755
+--- a/scripts/generate_icons.py
++++ b/scripts/generate_icons.py
+@@ -28,14 +28,14 @@ PATTERNS = {
+         "WWWWWWWW",
+     ],
+     "claude": [
+-        "..OOOOO.",
+-        ".OO.....",
+-        ".O......",
+-        ".O......",
+-        ".O......",
+-        ".O......",
+-        ".OO.....",
+-        "..OOOOO.",
++        ".OOOOOO.",
++        "OOOOOOO.",
++        "OO......",
++        "OO......",
++        "OO......",
++        "OO......",
++        "OOOOOOO.",
++        ".OOOOOO.",
+     ],
+ }
+ 
+diff --git a/tests/test_icons.py b/tests/test_icons.py
+index 1bd58e2..6ddd10d 100644
+--- a/tests/test_icons.py
++++ b/tests/test_icons.py
+@@ -26,10 +26,10 @@ class IconTests(unittest.TestCase):
+ 
+     def test_icons_use_only_the_requested_opaque_color(self) -> None:
+         expected = {
+-            "codex": {(255, 255, 255, 255)},
+-            "claude": {(217, 119, 87, 255)},
++            "codex": ({(255, 255, 255, 255)}, 33),
++            "claude": ({(217, 119, 87, 255)}, 34),
+         }
+-        for name, expected_colors in expected.items():
++        for name, (expected_colors, expected_opaque_pixels) in expected.items():
+             data = (ASSETS / f"{name}.png").read_bytes()
+             offset = 8
+             idat = bytearray()
+@@ -49,7 +49,9 @@ class IconTests(unittest.TestCase):
+                     tuple(scanline[index : index + 4])
+                     for index in range(1, 33, 4)
+                 )
+-            self.assertEqual({pixel for pixel in pixels if pixel[3]}, expected_colors)
++            opaque_pixels = [pixel for pixel in pixels if pixel[3]]
++            self.assertEqual(set(opaque_pixels), expected_colors)
++            self.assertEqual(len(opaque_pixels), expected_opaque_pixels)
+ 
+ 
+ if __name__ == "__main__":
