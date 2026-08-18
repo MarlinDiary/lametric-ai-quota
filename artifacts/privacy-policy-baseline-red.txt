@@ -1,0 +1,29 @@
+$ PYTHONPATH=src python3 -m unittest tests.test_server.ServerTests.test_privacy_policy_is_public_html -v
+test_privacy_policy_is_public_html (tests.test_server.ServerTests) ... ERROR
+
+======================================================================
+ERROR: test_privacy_policy_is_public_html (tests.test_server.ServerTests)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/marlin/Documents/Codex/2026-08-09/new-chat-2/work/lametric-ai-quota/tests/test_server.py", line 47, in test_privacy_policy_is_public_html
+    with urlopen(f"{self.base}/privacy") as response:
+  File "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/urllib/request.py", line 214, in urlopen
+    return opener.open(url, data, timeout)
+  File "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/urllib/request.py", line 523, in open
+    response = meth(req, response)
+  File "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/urllib/request.py", line 632, in http_response
+    response = self.parent.error(
+  File "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/urllib/request.py", line 561, in error
+    return self._call_chain(*args)
+  File "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/urllib/request.py", line 494, in _call_chain
+    result = func(*args)
+  File "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/urllib/request.py", line 641, in http_error_default
+    raise HTTPError(req.full_url, code, msg, hdrs, fp)
+urllib.error.HTTPError: HTTP Error 404: Not Found
+
+----------------------------------------------------------------------
+Ran 1 test in 0.520s
+
+FAILED (errors=1)
+{"event": "http", "client": "127.0.0.1", "method": "GET", "status": 404, "size": "-"}
+EXIT_STATUS=1

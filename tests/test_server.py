@@ -43,6 +43,15 @@ class ServerTests(unittest.TestCase):
         self.assertTrue(payload["ready"])
         self.assertEqual(payload["status"], "ok")
 
+    def test_privacy_policy_is_public_html(self) -> None:
+        with urlopen(f"{self.base}/privacy") as response:
+            body = response.read().decode("utf-8")
+            content_type = response.headers["Content-Type"]
+        self.assertEqual(content_type, "text/html; charset=utf-8")
+        self.assertIn("AI Quota Privacy Policy", body)
+        self.assertIn("OAuth credentials", body)
+        self.assertIn("does not sell", body)
+
     def test_secret_path_returns_four_frames_without_logging_token(self) -> None:
         output = io.StringIO()
         with redirect_stdout(output):
