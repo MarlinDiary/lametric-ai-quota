@@ -1,0 +1,55 @@
+COMMAND: PYTHONPATH=src python3 -m unittest discover -s tests -v
+INPUT: tests before implementation
+
+test_codexbar (unittest.loader._FailedTest) ... ERROR
+test_frames (unittest.loader._FailedTest) ... ERROR
+test_icons (unittest.loader._FailedTest) ... ERROR
+
+======================================================================
+ERROR: test_codexbar (unittest.loader._FailedTest)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_codexbar
+Traceback (most recent call last):
+  File "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/unittest/loader.py", line 436, in _find_test_path
+    module = self._get_module_from_name(name)
+  File "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/unittest/loader.py", line 377, in _get_module_from_name
+    __import__(name)
+  File "<REPO>/tests/test_codexbar.py", line 7, in <module>
+    from lametric_quota.codexbar import parse_provider_quota
+ModuleNotFoundError: No module named 'lametric_quota.codexbar'
+
+
+======================================================================
+ERROR: test_frames (unittest.loader._FailedTest)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_frames
+Traceback (most recent call last):
+  File "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/unittest/loader.py", line 436, in _find_test_path
+    module = self._get_module_from_name(name)
+  File "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/unittest/loader.py", line 377, in _get_module_from_name
+    __import__(name)
+  File "<REPO>/tests/test_frames.py", line 8, in <module>
+    from lametric_quota.codexbar import parse_provider_quota
+ModuleNotFoundError: No module named 'lametric_quota.codexbar'
+
+
+======================================================================
+ERROR: test_icons (unittest.loader._FailedTest)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_icons
+Traceback (most recent call last):
+  File "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/unittest/loader.py", line 436, in _find_test_path
+    module = self._get_module_from_name(name)
+  File "/Applications/Xcode-beta.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/unittest/loader.py", line 377, in _get_module_from_name
+    __import__(name)
+  File "<REPO>/tests/test_icons.py", line 7, in <module>
+    from lametric_quota.icons import icon_data_uri
+ModuleNotFoundError: No module named 'lametric_quota.icons'
+
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.000s
+
+FAILED (errors=3)
+
+EXIT_STATUS=1

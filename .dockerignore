@@ -1,0 +1,11 @@
+.git
+.github
+.env
+.codex
+.claude
+.codexbar
+__pycache__
+*.pyc
+artifacts
+fixtures
+tests

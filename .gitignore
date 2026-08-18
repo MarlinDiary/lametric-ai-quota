@@ -1,0 +1,9 @@
+.DS_Store
+.env
+.codex/
+.claude/
+.codexbar/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
